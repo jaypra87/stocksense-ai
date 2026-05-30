@@ -17,12 +17,46 @@ from app.services.market_data.base import (
     SearchResultDTO,
 )
 
-# A tiny universe the fake provider "knows about" for search/metadata realism.
+# The universe the fake provider "knows about" for search/metadata. Quotes,
+# candles, indicators, predictions and backtests are generated synthetically for
+# ANY ticker symbol — this list is just what search autocomplete can suggest.
 _KNOWN = {
     "AAPL": ("Apple Inc.", "NMS", "Technology"),
     "MSFT": ("Microsoft Corporation", "NMS", "Technology"),
     "NVDA": ("NVIDIA Corporation", "NMS", "Technology"),
+    "GOOGL": ("Alphabet Inc.", "NMS", "Communication Services"),
+    "AMZN": ("Amazon.com, Inc.", "NMS", "Consumer Cyclical"),
+    "META": ("Meta Platforms, Inc.", "NMS", "Communication Services"),
     "TSLA": ("Tesla, Inc.", "NMS", "Consumer Cyclical"),
+    "AMD": ("Advanced Micro Devices, Inc.", "NMS", "Technology"),
+    "INTC": ("Intel Corporation", "NMS", "Technology"),
+    "MU": ("Micron Technology, Inc.", "NMS", "Technology"),
+    "AVGO": ("Broadcom Inc.", "NMS", "Technology"),
+    "ORCL": ("Oracle Corporation", "NYQ", "Technology"),
+    "CRM": ("Salesforce, Inc.", "NYQ", "Technology"),
+    "ADBE": ("Adobe Inc.", "NMS", "Technology"),
+    "NFLX": ("Netflix, Inc.", "NMS", "Communication Services"),
+    "DIS": ("The Walt Disney Company", "NYQ", "Communication Services"),
+    "JPM": ("JPMorgan Chase & Co.", "NYQ", "Financial Services"),
+    "BAC": ("Bank of America Corporation", "NYQ", "Financial Services"),
+    "V": ("Visa Inc.", "NYQ", "Financial Services"),
+    "MA": ("Mastercard Incorporated", "NYQ", "Financial Services"),
+    "WMT": ("Walmart Inc.", "NYQ", "Consumer Defensive"),
+    "COST": ("Costco Wholesale Corporation", "NMS", "Consumer Defensive"),
+    "KO": ("The Coca-Cola Company", "NYQ", "Consumer Defensive"),
+    "PEP": ("PepsiCo, Inc.", "NMS", "Consumer Defensive"),
+    "MCD": ("McDonald's Corporation", "NYQ", "Consumer Cyclical"),
+    "NKE": ("NIKE, Inc.", "NYQ", "Consumer Cyclical"),
+    "XOM": ("Exxon Mobil Corporation", "NYQ", "Energy"),
+    "CVX": ("Chevron Corporation", "NYQ", "Energy"),
+    "JNJ": ("Johnson & Johnson", "NYQ", "Healthcare"),
+    "PFE": ("Pfizer Inc.", "NYQ", "Healthcare"),
+    "UNH": ("UnitedHealth Group Incorporated", "NYQ", "Healthcare"),
+    "BA": ("The Boeing Company", "NYQ", "Industrials"),
+    "GE": ("General Electric Company", "NYQ", "Industrials"),
+    "BRK-B": ("Berkshire Hathaway Inc.", "NYQ", "Financial Services"),
+    "SPY": ("SPDR S&P 500 ETF Trust", "PCX", "ETF"),
+    "QQQ": ("Invesco QQQ Trust", "NMS", "ETF"),
     "VFV.TO": ("Vanguard S&P 500 Index ETF", "TOR", "ETF"),
 }
 
