@@ -17,7 +17,7 @@ services:
     dockerContext: backend
     dockerCommand: sh start.sh
     plan: free
-    region: oregon
+    region: virginia      # co-located with the Neon US East database
     healthCheckPath: /api/v1/health
     envVars:
       - key: ENVIRONMENT
