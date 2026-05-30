@@ -1,4 +1,5 @@
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { DemoBanner } from "@/components/shared/DemoBanner";
 import { DisclaimerBanner } from "@/components/shared/DisclaimerBanner";
 import { Header } from "@/components/shared/Header";
 
@@ -9,6 +10,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen">
         <Header />
         <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+          <DemoBanner />
           {children}
           <DisclaimerBanner />
         </main>

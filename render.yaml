@@ -1,0 +1,52 @@
+# Render Blueprint — deploys the StockSense backend as a Docker web service.
+# In Render: New → Blueprint → point at this repo. Then set the three sync:false
+# env vars (DATABASE_URL, REDIS_URL, CORS_ORIGINS) in the dashboard.
+#
+# Postgres (Neon) and Redis (Upstash) are external free-tier services — paste
+# their connection URLs into DATABASE_URL / REDIS_URL.
+#
+# The Celery worker + beat (scheduled alert checks) are intentionally omitted:
+# Render has no free background-worker tier. Everything else works without them;
+# alerts simply won't auto-fire. See the commented block below to add them later.
+
+services:
+  - type: web
+    name: stocksense-backend
+    runtime: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    dockerCommand: sh start.sh
+    plan: free
+    region: oregon
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: MARKET_DATA_PROVIDER
+        value: fake          # reliable on cloud IPs; swap to a keyed provider for real data
+      - key: JWT_SECRET
+        generateValue: true  # Render generates a strong secret
+      - key: DATABASE_URL
+        sync: false          # paste your Neon connection string (postgresql+psycopg://…)
+      - key: REDIS_URL
+        sync: false          # paste your Upstash redis:// URL
+      - key: CORS_ORIGINS
+        sync: false          # set to your Vercel URL, e.g. https://stocksense-ai.vercel.app
+
+# To add scheduled alert checks later (paid Render workers), add:
+#  - type: worker
+#    name: stocksense-celery-worker
+#    runtime: docker
+#    dockerfilePath: backend/Dockerfile
+#    dockerContext: backend
+#    dockerCommand: celery -A app.workers.celery_app worker --loglevel=info
+#    plan: starter
+#    envVars: [ ...same DATABASE_URL / REDIS_URL / MARKET_DATA_PROVIDER... ]
+#  - type: worker
+#    name: stocksense-celery-beat
+#    runtime: docker
+#    dockerfilePath: backend/Dockerfile
+#    dockerContext: backend
+#    dockerCommand: celery -A app.workers.celery_app beat --loglevel=info
+#    plan: starter
+#    envVars: [ ... ]
