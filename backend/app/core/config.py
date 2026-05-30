@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,6 +30,17 @@ class Settings(BaseSettings):
     polygon_api_key: str | None = None
     finnhub_api_key: str | None = None
     alpha_vantage_api_key: str | None = None
+
+    @field_validator("database_url")
+    @classmethod
+    def _force_psycopg3_driver(cls, v: str) -> str:
+        """Hosting providers hand out `postgres://` / `postgresql://`, which
+        SQLAlchemy maps to the (uninstalled) psycopg2 driver. Coerce any of those
+        to the psycopg3 form so the URL works no matter how it's supplied."""
+        for prefix in ("postgresql+psycopg2://", "postgresql://", "postgres://"):
+            if v.startswith(prefix):
+                return "postgresql+psycopg://" + v[len(prefix):]
+        return v
 
     @property
     def cors_origins_list(self) -> list[str]:
