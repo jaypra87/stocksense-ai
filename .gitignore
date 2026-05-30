@@ -1,0 +1,30 @@
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+
+# --- Node / frontend ---
+node_modules/
+.next/
+out/
+.pnpm-store/
+
+# --- Env files (never commit secrets) ---
+.env
+.env.local
+.env.*.local
+
+# --- ML artifacts (large binaries; ship via volume / object storage) ---
+backend/app/ml/artifacts/*
+!backend/app/ml/artifacts/.gitkeep
+
+# --- IDE / OS ---
+.vscode/
+.idea/
+.DS_Store
