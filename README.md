@@ -163,12 +163,4 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Dockerized backend on Render/Fl
 
 For educational purposes only. Not financial advice. Predictions are probabilistic and may be wrong. Do not store brokerage credentials or make trading decisions based on this app.
 
----
 
-### Résumé bullet
-
-> Built **StockSense AI**, a production-style stock analytics platform (Next.js, FastAPI, PostgreSQL, Redis/Celery, scikit-learn) delivering technical indicators, explainable ML forecasts, news-sentiment analysis, composite risk scoring, watchlists, scheduled alerts, and walk-forward backtesting.
-
-### Portfolio bullet
-
-> Designed an **explainable, uncertainty-aware** AI forecasting workflow that fuses OHLCV data, technical indicators, news sentiment, and risk signals — with leakage-free walk-forward backtesting and baseline comparison — to produce transparent, honestly-communicated stock-trend insights.
