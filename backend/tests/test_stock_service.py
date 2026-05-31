@@ -1,20 +1,7 @@
-from datetime import UTC, datetime
-
 import pytest
 
 from app.services.market_data.base import InvalidTickerError
-from app.services.stock_service import _range_cutoff, normalize_ticker, resolve_range
-
-
-def test_range_cutoff_is_more_recent_for_shorter_ranges() -> None:
-    # A 1-month window must start later than a 1-year window.
-    assert _range_cutoff("1m") > _range_cutoff("6m") > _range_cutoff("1y") > _range_cutoff("5y")
-
-
-def test_range_cutoff_ytd_is_jan_first() -> None:
-    cutoff = _range_cutoff("ytd")
-    assert cutoff.month == 1 and cutoff.day == 1
-    assert cutoff.year == datetime.now(UTC).year
+from app.services.stock_service import normalize_ticker, resolve_range
 
 
 @pytest.mark.parametrize(

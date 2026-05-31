@@ -7,10 +7,8 @@ all at once.
 """
 
 import re
-from datetime import UTC, datetime, timedelta
 
 from redis import Redis
-from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -43,26 +41,6 @@ _RANGE_MAP: dict[str, tuple[str, str]] = {
     "1y": ("1y", "1d"),
     "5y": ("5y", "1wk"),
 }
-
-# How far back each range looks, for filtering the read-back. A small buffer is
-# added so the very first candle of the window isn't clipped.
-_RANGE_LOOKBACK: dict[str, timedelta] = {
-    "1d": timedelta(days=2),
-    "5d": timedelta(days=7),
-    "1m": timedelta(days=32),
-    "6m": timedelta(days=186),
-    "1y": timedelta(days=368),
-    "5y": timedelta(days=5 * 366 + 10),
-}
-
-
-def _range_cutoff(range_: str) -> datetime:
-    """Earliest timestamp to include when returning history for a range."""
-    now = datetime.now(UTC)
-    if range_ == "ytd":
-        return datetime(now.year, 1, 1, tzinfo=UTC)
-    return now - _RANGE_LOOKBACK.get(range_, timedelta(days=368))
-
 
 def normalize_ticker(raw: str) -> str:
     """Uppercase, strip, and validate the ticker format. Raises InvalidTickerError."""
@@ -154,24 +132,19 @@ def get_history(
     range_: str = "1y",
     interval: str | None = None,
 ) -> dict:
-    """Fetch candles from the provider, persist them, and return from the DB."""
+    """Fetch candles for the requested window and return them (also persisted).
+
+    Returns the freshly-fetched candles directly rather than re-reading the DB.
+    Re-reading the accumulated table can mix candles from different providers or
+    vintages (e.g. synthetic vs yfinance, stored at different timestamps), which
+    renders as a spiky, zig-zagging chart. The current fetch is the clean,
+    single-source view for the requested period.
+    """
     ticker = normalize_ticker(raw_ticker)
     period, resolved_interval = resolve_range(range_, interval)
 
-    fetch_and_store_candles(db, provider, ticker, period, resolved_interval)
-
-    # Read back ONLY the requested window. Without the timestamp cutoff every
-    # daily-interval range (1m/6m/ytd/1y) would return the full accumulated
-    # partition and render identically.
-    rows = db.execute(
-        select(PriceCandle)
-        .where(
-            PriceCandle.ticker == ticker,
-            PriceCandle.interval == resolved_interval,
-            PriceCandle.timestamp >= _range_cutoff(range_),
-        )
-        .order_by(PriceCandle.timestamp)
-    ).scalars().all()
+    candles = fetch_and_store_candles(db, provider, ticker, period, resolved_interval)
+    candles = sorted(candles, key=lambda c: c.timestamp)
 
     return {
         "ticker": ticker,
@@ -187,7 +160,7 @@ def get_history(
                 "adj_close": c.adj_close,
                 "volume": c.volume,
             }
-            for c in rows
+            for c in candles
         ],
     }
 
