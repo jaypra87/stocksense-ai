@@ -6,6 +6,10 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password, verify_password
 from app.db.models.user import User
 
+# Compared against when the email doesn't exist, so login takes the same time
+# for unknown and known emails (no timing-based user enumeration).
+_DUMMY_HASH = hash_password("timing-equalization-dummy")
+
 
 class EmailTakenError(Exception):
     """A user with this email already exists."""
@@ -31,6 +35,9 @@ def signup(db: Session, email: str, password: str) -> User:
 def authenticate(db: Session, email: str, password: str) -> User:
     email = email.strip().lower()
     user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
-    if user is None or not verify_password(password, user.password_hash):
+    if user is None:
+        verify_password(password, _DUMMY_HASH)  # burn the same bcrypt time
+        raise InvalidCredentialsError()
+    if not verify_password(password, user.password_hash):
         raise InvalidCredentialsError()
     return user

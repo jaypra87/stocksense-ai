@@ -1,4 +1,4 @@
-import { getToken } from "@/lib/auth";
+import { clearToken, getToken } from "@/lib/auth";
 import { env } from "@/lib/env";
 
 export class ApiError extends Error {
@@ -15,6 +15,9 @@ export class ApiError extends Error {
 type RequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
 };
+
+// Endpoints where a 401 is a normal outcome (bad credentials), not an expired session.
+const AUTH_PATHS = ["/auth/login", "/auth/signup"];
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers, ...rest } = options;
@@ -33,17 +36,36 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
+  // Guarded parse: proxies/gateways can return non-JSON error bodies (HTML 502
+  // pages etc.) — those must still surface as ApiError, not a raw SyntaxError.
   const text = await response.text();
-  const parsed = text ? JSON.parse(text) : null;
+  let parsed: unknown = null;
+  if (text) {
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = text;
+    }
+  }
 
   if (!response.ok) {
-    throw new ApiError(
-      typeof parsed === "object" && parsed && "detail" in parsed
-        ? String(parsed.detail)
-        : response.statusText,
-      response.status,
-      parsed,
-    );
+    // Expired/invalid session: clear the stale token and send the user to
+    // login instead of leaving every panel in a silent error state.
+    if (
+      response.status === 401 &&
+      token &&
+      typeof window !== "undefined" &&
+      !AUTH_PATHS.some((p) => path.startsWith(p))
+    ) {
+      clearToken();
+      window.location.assign("/login");
+    }
+
+    const detail =
+      typeof parsed === "object" && parsed !== null && "detail" in parsed
+        ? String((parsed as { detail: unknown }).detail)
+        : response.statusText || "Request failed";
+    throw new ApiError(detail, response.status, parsed);
   }
 
   return parsed as T;

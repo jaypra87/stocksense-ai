@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from redis import Redis
 from sqlalchemy.orm import Session
 
+from app.api.errors import provider_error
 from app.cache.redis_client import get_redis
 from app.db.session import get_db
 from app.ml.features import HORIZON_DAYS
@@ -38,7 +39,7 @@ def create_prediction(
     except InvalidTickerError:
         raise HTTPException(status_code=404, detail=f"Unknown ticker: {ticker}") from None
     except ProviderError as exc:
-        raise HTTPException(status_code=502, detail=f"Data provider error: {exc}") from exc
+        raise provider_error(exc) from exc
 
 
 @router.get("/{ticker}/history", response_model=list[PredictionHistoryItem])

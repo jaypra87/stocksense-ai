@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from redis import Redis
 from sqlalchemy.orm import Session
 
+from app.api.errors import provider_error
 from app.cache.redis_client import get_redis
 from app.db.session import get_db
 from app.schemas.indicator import IndicatorsOut
@@ -23,7 +24,7 @@ _VALID_RANGES = ["1d", "5d", "1m", "6m", "ytd", "1y", "5y"]
 
 @router.get("/search", response_model=list[SearchResultOut])
 def search_stocks(
-    q: str = Query(..., min_length=1, description="Search query (name or symbol)"),
+    q: str = Query(..., min_length=1, max_length=64, description="Search query (name or symbol)"),
     limit: int = Query(10, ge=1, le=25),
     redis: Redis = Depends(get_redis),
     provider: MarketDataProvider = Depends(get_provider),
@@ -43,7 +44,7 @@ def get_stock(
     except InvalidTickerError:
         raise HTTPException(status_code=404, detail=f"Unknown ticker: {ticker}") from None
     except ProviderError as exc:
-        raise HTTPException(status_code=502, detail=f"Data provider error: {exc}") from exc
+        raise provider_error(exc) from exc
 
 
 @router.get("/{ticker}/quote", response_model=QuoteOut)
@@ -57,7 +58,7 @@ def get_quote(
     except InvalidTickerError:
         raise HTTPException(status_code=404, detail=f"Unknown ticker: {ticker}") from None
     except ProviderError as exc:
-        raise HTTPException(status_code=502, detail=f"Data provider error: {exc}") from exc
+        raise provider_error(exc) from exc
 
 
 @router.get("/{ticker}/history", response_model=HistoryOut)
@@ -77,7 +78,7 @@ def get_history(
     except InvalidTickerError:
         raise HTTPException(status_code=404, detail=f"Unknown ticker: {ticker}") from None
     except ProviderError as exc:
-        raise HTTPException(status_code=502, detail=f"Data provider error: {exc}") from exc
+        raise provider_error(exc) from exc
 
 
 @router.get("/{ticker}/indicators", response_model=IndicatorsOut)
@@ -96,7 +97,7 @@ def get_indicators(
     except InvalidTickerError:
         raise HTTPException(status_code=404, detail=f"Unknown ticker: {ticker}") from None
     except ProviderError as exc:
-        raise HTTPException(status_code=502, detail=f"Data provider error: {exc}") from exc
+        raise provider_error(exc) from exc
 
 
 @router.get("/{ticker}/risk", response_model=RiskOut)
@@ -116,7 +117,7 @@ def get_risk(
     except InvalidTickerError:
         raise HTTPException(status_code=404, detail=f"Unknown ticker: {ticker}") from None
     except ProviderError as exc:
-        raise HTTPException(status_code=502, detail=f"Data provider error: {exc}") from exc
+        raise provider_error(exc) from exc
 
 
 @router.get("/{ticker}/sentiment", response_model=SentimentOut)
@@ -131,4 +132,4 @@ def get_sentiment(
     except InvalidTickerError:
         raise HTTPException(status_code=404, detail=f"Unknown ticker: {ticker}") from None
     except ProviderError as exc:
-        raise HTTPException(status_code=502, detail=f"Data provider error: {exc}") from exc
+        raise provider_error(exc) from exc

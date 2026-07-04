@@ -17,6 +17,10 @@ RUN pip install --upgrade pip && pip install -e .
 
 COPY . .
 
+# Run as a non-root user; it owns /app so the bootstrap step can write ML artifacts.
+RUN useradd --create-home --uid 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

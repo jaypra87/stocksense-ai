@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1 import api_router
 from app.core.config import get_settings
@@ -33,6 +34,22 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+def make_security_headers(production: bool) -> dict[str, str]:
+    """Defensive headers for every API response. The API serves JSON (plus the
+    Swagger docs), so a deny-by-default CSP is safe; docs pages override
+    nothing because browsers only apply frame/script rules where relevant."""
+    headers = {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "no-referrer",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+        "Cache-Control": "no-store",
+    }
+    if production:
+        headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    return headers
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
@@ -46,10 +63,25 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
     )
     app.middleware("http")(log_requests)
+
+    security_headers = make_security_headers(settings.environment == "production")
+
+    @app.middleware("http")
+    async def add_security_headers(request: Request, call_next):
+        response = await call_next(request)
+        for key, value in security_headers.items():
+            response.headers.setdefault(key, value)
+        return response
+
+    @app.exception_handler(Exception)
+    async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+        # Log the real error server-side; never leak internals to the client.
+        logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
     app.include_router(api_router)
     return app
