@@ -12,7 +12,7 @@ const LABEL_STYLE: Record<SentimentLabel, { color: string; bg: string; text: str
   positive: { color: "text-bullish", bg: "bg-bullish/15", text: "Positive" },
   negative: { color: "text-bearish", bg: "bg-bearish/15", text: "Negative" },
   neutral: { color: "text-neutral", bg: "bg-muted", text: "Neutral" },
-  mixed: { color: "text-yellow-500", bg: "bg-yellow-500/15", text: "Mixed" },
+  mixed: { color: "text-warning", bg: "bg-warning/15", text: "Mixed" },
 };
 
 const ITEM_DOT: Record<string, string> = {
@@ -27,7 +27,7 @@ export function SentimentPanel({ ticker }: { ticker: string }) {
   return (
     <Card className="space-y-4">
       <CardTitle className="flex items-center gap-2">
-        <Newspaper className="h-4 w-4 text-accent" /> News Sentiment
+        <Newspaper className="h-4 w-4 text-accent" aria-hidden /> News Sentiment
       </CardTitle>
 
       {isLoading ? (
@@ -53,8 +53,12 @@ export function SentimentPanel({ ticker }: { ticker: string }) {
               {LABEL_STYLE[data.overall_label].text}
             </span>
             <div className="text-sm text-muted-foreground">
-              <span className="tabular-nums">{data.overall_score >= 0 ? "+" : ""}{data.overall_score.toFixed(2)}</span>{" "}
-              score · {data.counts.positive}↑ {data.counts.negative}↓ {data.counts.neutral}–
+              <span className="tabular-nums">
+                {data.overall_score >= 0 ? "+" : ""}
+                {data.overall_score.toFixed(2)}
+              </span>{" "}
+              score · {data.counts.positive} positive, {data.counts.negative} negative,{" "}
+              {data.counts.neutral} neutral
             </div>
           </div>
 
@@ -66,15 +70,16 @@ export function SentimentPanel({ ticker }: { ticker: string }) {
               <li key={i} className="flex items-start gap-2 text-sm">
                 <span
                   className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", ITEM_DOT[it.label])}
-                  title={it.label}
+                  aria-hidden
                 />
                 <div className="min-w-0">
+                  <span className="sr-only">{it.label} sentiment: </span>
                   {it.url ? (
                     <a
                       href={it.url}
                       target="_blank"
-                      rel="noreferrer"
-                      className="hover:text-accent hover:underline"
+                      rel="noreferrer noopener"
+                      className="underline-offset-2 hover:text-accent hover:underline"
                     >
                       {it.title}
                     </a>

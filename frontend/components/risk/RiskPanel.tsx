@@ -13,7 +13,7 @@ export function RiskPanel({ ticker }: { ticker: string }) {
   return (
     <Card className="space-y-4">
       <CardTitle className="flex items-center gap-2">
-        <ShieldAlert className="h-4 w-4 text-accent" /> Risk Score
+        <ShieldAlert className="h-4 w-4 text-accent" aria-hidden /> Risk Score
       </CardTitle>
 
       {isLoading ? (
@@ -27,7 +27,7 @@ export function RiskPanel({ ticker }: { ticker: string }) {
         <>
           <RiskGauge score={data.risk_score} level={data.risk_level} />
 
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {data.factors.map((f) => {
               const pct = Math.min(100, Math.max(0, f.score));
               return (
@@ -36,11 +36,15 @@ export function RiskPanel({ ticker }: { ticker: string }) {
                     <span className="capitalize text-muted-foreground">{f.description}</span>
                     <span className="tabular-nums">{Math.round(f.score)}</span>
                   </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-accent"
-                      style={{ width: `${pct}%` }}
-                    />
+                  <div
+                    role="progressbar"
+                    aria-label={f.description}
+                    aria-valuenow={Math.round(pct)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted"
+                  >
+                    <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );

@@ -1,41 +1,22 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 
-import { Card } from "@/components/ui/Card";
+import { WatchlistPreview } from "@/components/watchlist/WatchlistPreview";
+import { PopularTickers } from "@/components/stock/PopularTickers";
 
-const POPULAR = [
-  { symbol: "AAPL", name: "Apple" },
-  { symbol: "MSFT", name: "Microsoft" },
-  { symbol: "NVDA", name: "NVIDIA" },
-  { symbol: "TSLA", name: "Tesla" },
-  { symbol: "AMZN", name: "Amazon" },
-  { symbol: "GOOGL", name: "Alphabet" },
-];
+export const metadata: Metadata = { title: "Dashboard" };
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Search any ticker above, or jump into a popular one below.
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Search any ticker above, or jump back into your watchlist.
         </p>
       </div>
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Popular tickers
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {POPULAR.map((p) => (
-            <Link key={p.symbol} href={`/stocks/${p.symbol}`}>
-              <Card className="transition-colors hover:border-accent hover:bg-muted">
-                <div className="font-bold">{p.symbol}</div>
-                <div className="text-xs text-muted-foreground">{p.name}</div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <WatchlistPreview />
+      <PopularTickers />
     </div>
   );
 }

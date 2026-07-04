@@ -2,7 +2,8 @@
 // Keeping these in sync is manual for now; a future phase could codegen them
 // from the OpenAPI spec FastAPI already exposes at /openapi.json.
 
-export type Range = "1d" | "5d" | "1m" | "6m" | "ytd" | "1y" | "5y";
+export const RANGES = ["1d", "5d", "1m", "6m", "ytd", "1y", "5y"] as const;
+export type Range = (typeof RANGES)[number];
 
 export interface SearchResult {
   symbol: string;

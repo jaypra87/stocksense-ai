@@ -3,19 +3,28 @@
 import { Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 
-import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { useToast } from "@/components/ui/Toast";
 import { useToggleWatchlist, useWatchlist } from "@/lib/hooks/useWatchlist";
 
 export default function WatchlistPage() {
   const { data, isLoading } = useWatchlist();
   const { remove } = useToggleWatchlist();
+  const { toast } = useToast();
+
+  function onRemove(ticker: string) {
+    remove.mutate(ticker, {
+      onSuccess: () => toast(`${ticker} removed from watchlist`),
+      onError: () => toast(`Couldn't remove ${ticker}`, "error"),
+    });
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Watchlist</h1>
-        <p className="text-sm text-muted-foreground">Your saved tickers.</p>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Watchlist</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Your saved tickers.</p>
       </div>
 
       {isLoading ? (
@@ -25,17 +34,18 @@ export default function WatchlistPage() {
           ))}
         </div>
       ) : !data || data.length === 0 ? (
-        <Card className="flex flex-col items-center gap-2 py-10 text-center">
-          <Star className="h-6 w-6 text-muted-foreground" />
-          <p className="font-medium">No saved tickers yet</p>
-          <p className="text-sm text-muted-foreground">
-            Search for a stock and tap “Add to watchlist”.
-          </p>
-        </Card>
+        <EmptyState
+          icon={Star}
+          title="No saved tickers yet"
+          description="Search for a stock and tap “Add to watchlist”."
+        />
       ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
           {data.map((item) => (
-            <div key={item.ticker} className="flex items-center justify-between gap-3 px-4 py-3">
+            <li
+              key={item.ticker}
+              className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-card-hover"
+            >
               <Link href={`/stocks/${item.ticker}`} className="flex-1">
                 <span className="font-semibold">{item.ticker}</span>
                 {item.company_name && (
@@ -43,15 +53,15 @@ export default function WatchlistPage() {
                 )}
               </Link>
               <button
-                onClick={() => remove.mutate(item.ticker)}
+                onClick={() => onRemove(item.ticker)}
+                aria-label={`Remove ${item.ticker} from watchlist`}
                 className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-bearish"
-                title="Remove"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" aria-hidden />
               </button>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

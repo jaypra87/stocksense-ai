@@ -1,11 +1,14 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { GitCompare, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { CompareChart } from "@/components/compare/CompareChart";
 import { CompareRow } from "@/components/compare/CompareRow";
+import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Input } from "@/components/ui/Input";
 
 const MAX = 6;
 
@@ -25,45 +28,48 @@ export default function ComparePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Compare</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Compare</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Compare tickers by price, daily change, risk, sentiment, and rebased returns.
         </p>
       </div>
 
-      <form onSubmit={add} className="flex gap-2">
-        <input
-          placeholder={`Add a ticker (up to ${MAX})`}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={tickers.length >= MAX}
-          className="w-48 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-accent disabled:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={tickers.length >= MAX}
-          className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground hover:opacity-90 disabled:opacity-50"
-        >
-          <Plus className="h-4 w-4" /> Add
-        </button>
+      <form onSubmit={add} className="flex items-end gap-2">
+        <div className="w-56">
+          <Input
+            label={`Add a ticker (up to ${MAX})`}
+            placeholder="e.g. AMZN"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={tickers.length >= MAX}
+          />
+        </div>
+        <Button type="submit" disabled={tickers.length >= MAX}>
+          <Plus className="h-4 w-4" aria-hidden /> Add
+        </Button>
       </form>
 
       {tickers.length === 0 ? (
-        <Card className="py-10 text-center text-sm text-muted-foreground">
-          Add a few tickers to compare them.
-        </Card>
+        <EmptyState
+          icon={GitCompare}
+          title="Nothing to compare yet"
+          description="Add a few tickers to compare them side by side."
+        />
       ) : (
         <>
           <Card className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-left text-xs uppercase text-muted-foreground">
+              <caption className="sr-only">Side-by-side ticker comparison</caption>
+              <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th className="py-1 pr-4">Ticker</th>
-                  <th className="py-1 pr-4">Price</th>
-                  <th className="py-1 pr-4">Change</th>
-                  <th className="py-1 pr-4">Risk</th>
-                  <th className="py-1 pr-4">Sentiment</th>
-                  <th className="py-1" />
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">Ticker</th>
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">Price</th>
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">Change</th>
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">Risk</th>
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">Sentiment</th>
+                  <th scope="col" className="py-1.5">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>

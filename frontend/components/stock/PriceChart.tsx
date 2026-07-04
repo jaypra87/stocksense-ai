@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Area,
   Bar,
@@ -10,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { chartAxisStroke, chartAxisTick, chartTooltipStyle } from "@/lib/chartTheme";
 import { fmtCompact, fmtCurrency } from "@/lib/format";
 import type { History, Range } from "@/types/stock";
 
@@ -43,11 +45,22 @@ export function PriceChart({
   range: Range;
   currency?: string;
 }) {
-  const data = history.candles.map((c) => ({
-    t: new Date(c.timestamp).getTime(),
-    c: c.close,
-    v: c.volume ?? 0,
-  }));
+  // Memoized: the quote poll re-renders the page every 30s and this series
+  // (potentially ~1250 candles at 5y) shouldn't be rebuilt each time.
+  const { data, up, maxVol } = useMemo(() => {
+    const points = history.candles.map((c) => ({
+      t: new Date(c.timestamp).getTime(),
+      c: c.close,
+      v: c.volume ?? 0,
+    }));
+    let max = 0;
+    for (const p of points) if (p.v > max) max = p.v;
+    return {
+      data: points,
+      up: points.length > 0 && points[points.length - 1].c >= points[0].c,
+      maxVol: max,
+    };
+  }, [history]);
 
   if (data.length === 0) {
     return (
@@ -58,9 +71,7 @@ export function PriceChart({
   }
 
   // Color the chart by overall direction across the visible range.
-  const up = data[data.length - 1].c >= data[0].c;
   const color = up ? "hsl(var(--bullish))" : "hsl(var(--bearish))";
-  const maxVol = Math.max(...data.map((d) => d.v));
 
   return (
     <ResponsiveContainer width="100%" height={360}>
@@ -78,8 +89,8 @@ export function PriceChart({
           domain={["dataMin", "dataMax"]}
           scale="time"
           tickFormatter={(t) => formatAxisDate(t, range)}
-          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-          stroke="hsl(var(--border))"
+          tick={chartAxisTick}
+          stroke={chartAxisStroke}
           minTickGap={40}
         />
         <YAxis
@@ -87,20 +98,15 @@ export function PriceChart({
           orientation="right"
           domain={["auto", "auto"]}
           tickFormatter={(v) => fmtCurrency(v, currency)}
-          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-          stroke="hsl(var(--border))"
+          tick={chartAxisTick}
+          stroke={chartAxisStroke}
           width={70}
         />
         {/* Hidden axis scales volume bars to the lower ~25% of the chart. */}
         <YAxis yAxisId="vol" hide domain={[0, maxVol * 4]} />
 
         <Tooltip
-          contentStyle={{
-            background: "hsl(var(--background))",
-            border: "1px solid hsl(var(--border))",
-            borderRadius: 8,
-            fontSize: 12,
-          }}
+          contentStyle={chartTooltipStyle}
           labelFormatter={(t) => new Date(Number(t)).toLocaleString()}
           formatter={(value: number, name: string) =>
             name === "Price"
