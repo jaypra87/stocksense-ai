@@ -4,32 +4,99 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --border: 214 32% 91%;
-    --accent: 221 83% 53%;
+    /* Light theme — tuned for WCAG AA contrast on all text tokens. */
+    --background: 220 33% 98%;
+    --foreground: 224 47% 10%;
+    --card: 0 0% 100%;
+    --card-hover: 220 27% 96%;
+    --muted: 220 24% 93%;
+    --muted-foreground: 220 12% 38%;
+    --border: 220 18% 87%;
+    --accent: 224 76% 46%;
+    --accent-hover: 224 76% 40%;
     --accent-foreground: 0 0% 100%;
-    --bullish: 142 71% 45%;
-    --bearish: 0 84% 60%;
-    --neutral: 215 16% 47%;
+    --bullish: 152 70% 29%;
+    --bearish: 0 72% 43%;
+    --warning: 33 95% 30%;
+    --neutral: 220 12% 38%;
+    --ring: 224 76% 46%;
   }
 
   .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --border: 217 33% 20%;
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
-    --bullish: 142 71% 45%;
-    --bearish: 0 84% 60%;
-    --neutral: 215 20% 65%;
+    --background: 224 42% 6%;
+    --foreground: 214 32% 96%;
+    --card: 224 34% 9%;
+    --card-hover: 224 30% 12%;
+    --muted: 222 26% 15%;
+    --muted-foreground: 218 15% 69%;
+    --border: 222 22% 18%;
+    --accent: 221 92% 64%;
+    --accent-hover: 221 92% 70%;
+    --accent-foreground: 224 42% 6%;
+    --bullish: 150 62% 50%;
+    --bearish: 0 88% 68%;
+    --warning: 40 92% 62%;
+    --neutral: 218 15% 69%;
+    --ring: 221 92% 64%;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Visible keyboard focus everywhere; mouse clicks stay clean. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.25);
+  }
+}
+
+@layer utilities {
+  /* Entrance animation for marketing sections. Guarded by reduced-motion below. */
+  .animate-fade-up {
+    animation: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Card hover lift — subtle, GPU-friendly (transform + shadow only). */
+  .hover-lift {
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Respect users who prefer less motion: collapse all animation/transition time. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hover-lift:hover {
+    transform: none;
   }
 }
