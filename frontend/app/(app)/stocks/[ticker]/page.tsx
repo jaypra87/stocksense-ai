@@ -10,6 +10,8 @@ import { RSIChart } from "@/components/indicators/RSIChart";
 import { PredictionPanel } from "@/components/prediction/PredictionPanel";
 import { RiskPanel } from "@/components/risk/RiskPanel";
 import { SentimentPanel } from "@/components/sentiment/SentimentPanel";
+import { Reveal } from "@/components/shared/Reveal";
+import { TickerLogo } from "@/components/shared/TickerLogo";
 import { KeyStats } from "@/components/stock/KeyStats";
 import { PriceChart } from "@/components/stock/PriceChart";
 import { QuoteCard } from "@/components/stock/QuoteCard";
@@ -48,66 +50,111 @@ export default function StockPage() {
   return (
     <div className="space-y-6">
       {/* Header row: ticker + watchlist toggle */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{ticker}</h1>
-          {stock.data?.company_name && (
-            <p className="text-sm text-muted-foreground">{stock.data.company_name}</p>
-          )}
+      <div className="flex animate-fade-up items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <TickerLogo ticker={ticker} size="lg" />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{ticker}</h1>
+            {stock.data?.company_name && (
+              <p className="text-sm text-muted-foreground">{stock.data.company_name}</p>
+            )}
+          </div>
         </div>
         <WatchlistButton ticker={ticker} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Side column first in DOM so price + stats lead on mobile; visually right on lg. */}
-        <div className="space-y-6 lg:order-2">
-          <QuoteCard quote={quote.data} stock={stock.data} isLoading={quote.isLoading} />
-          <KeyStats quote={quote.data} isLoading={quote.isLoading} />
+        {/* Side column first in DOM so price + stats lead on mobile; visually right
+            on lg, where it sticks in place while the analysis column scrolls. */}
+        <div className="space-y-6 lg:sticky lg:top-20 lg:order-2 lg:self-start">
+          <Reveal>
+            <QuoteCard quote={quote.data} stock={stock.data} isLoading={quote.isLoading} />
+          </Reveal>
+          <Reveal delay={80}>
+            <KeyStats quote={quote.data} isLoading={quote.isLoading} />
+          </Reveal>
+          {stock.data && (stock.data.sector || stock.data.exchange) && (
+            <Reveal delay={160} className="hidden lg:block">
+              <Card className="space-y-3">
+                <CardTitle>Profile</CardTitle>
+                <dl className="space-y-2 text-sm">
+                  {(
+                    [
+                      ["Sector", stock.data.sector],
+                      ["Exchange", stock.data.exchange],
+                      ["Currency", stock.data.currency],
+                    ] as const
+                  )
+                    .filter(([, value]) => value)
+                    .map(([label, value]) => (
+                      <div key={label} className="flex justify-between gap-2">
+                        <dt className="text-muted-foreground">{label}</dt>
+                        <dd className="font-medium">{value}</dd>
+                      </div>
+                    ))}
+                </dl>
+              </Card>
+            </Reveal>
+          )}
         </div>
 
         {/* Main column: chart + analysis panels */}
         <div className="space-y-6 lg:order-1 lg:col-span-2">
-          <Card className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <CardTitle>Price history</CardTitle>
-              <SegmentedControl
-                options={RANGES}
-                value={range}
-                onChange={setRange}
-                label="Chart range"
-              />
-            </div>
-            {history.isLoading ? (
-              <Skeleton className="h-[360px] w-full" />
-            ) : history.isError ? (
-              <div className="flex h-[360px] items-center justify-center text-sm text-muted-foreground">
-                Failed to load price history.
-              </div>
-            ) : (
-              history.data && (
-                <PriceChart
-                  history={history.data}
-                  range={range}
-                  currency={quote.data?.currency ?? "USD"}
+          <Reveal>
+            <Card className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <CardTitle>Price history</CardTitle>
+                <SegmentedControl
+                  options={RANGES}
+                  value={range}
+                  onChange={setRange}
+                  label="Chart range"
                 />
-              )
-            )}
-          </Card>
+              </div>
+              {history.isLoading ? (
+                <Skeleton className="h-[360px] w-full" />
+              ) : history.isError ? (
+                <div className="flex h-[360px] items-center justify-center text-sm text-muted-foreground">
+                  Failed to load price history.
+                </div>
+              ) : (
+                history.data && (
+                  <PriceChart
+                    history={history.data}
+                    range={range}
+                    currency={quote.data?.currency ?? "USD"}
+                  />
+                )
+              )}
+            </Card>
+          </Reveal>
 
-          <PredictionPanel ticker={ticker} currency={quote.data?.currency ?? "USD"} />
-          <RiskPanel ticker={ticker} />
-          <SentimentPanel ticker={ticker} />
+          <Reveal>
+            <PredictionPanel ticker={ticker} currency={quote.data?.currency ?? "USD"} />
+          </Reveal>
+          <Reveal>
+            <RiskPanel ticker={ticker} />
+          </Reveal>
+          <Reveal>
+            <SentimentPanel ticker={ticker} />
+          </Reveal>
 
-          <IndicatorsPanel
-            data={indicators.data}
-            isLoading={indicators.isLoading}
-            currency={quote.data?.currency ?? "USD"}
-          />
+          <Reveal>
+            <IndicatorsPanel
+              data={indicators.data}
+              isLoading={indicators.isLoading}
+              currency={quote.data?.currency ?? "USD"}
+            />
+          </Reveal>
           {!indicators.isLoading && indicators.data && (
-            <RSIChart data={indicators.data} range={range} />
+            <Reveal>
+              <RSIChart data={indicators.data} range={range} />
+            </Reveal>
           )}
 
-          <BacktestPanel ticker={ticker} />
+          <Reveal>
+            <BacktestPanel ticker={ticker} />
+          </Reveal>
         </div>
       </div>
     </div>

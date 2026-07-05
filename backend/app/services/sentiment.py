@@ -27,10 +27,6 @@ _NEGATIONS = {"not", "no", "never", "without", "fails", "fail", "lacks", "isn't"
 
 _TOKEN_RE = re.compile(r"[a-z']+")
 
-# Thresholds separating positive / neutral / negative.
-_POS_THRESHOLD = 0.1
-_NEG_THRESHOLD = -0.1
-
 
 def score_text(text: str) -> float:
     """Sentiment of a single headline in [-1, 1]."""
@@ -51,9 +47,9 @@ def score_text(text: str) -> float:
 
 
 def label_from_score(score: float) -> str:
-    if score > _POS_THRESHOLD:
+    if score > 0.1:
         return "positive"
-    if score < _NEG_THRESHOLD:
+    if score < -0.1:
         return "negative"
     return "neutral"
 

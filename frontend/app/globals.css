@@ -74,6 +74,19 @@
     }
   }
 
+  /* Scroll reveal — Reveal.tsx adds .is-in via IntersectionObserver. */
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.is-in {
+    opacity: 1;
+    transform: none;
+  }
+
   /* Card hover lift — subtle, GPU-friendly (transform + shadow only). */
   .hover-lift {
     transition:

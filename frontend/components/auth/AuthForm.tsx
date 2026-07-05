@@ -84,7 +84,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             </p>
           </div>
 
-          <form onSubmit={onSubmit} noValidate={false} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <Input
               type="email"
               label="Email"

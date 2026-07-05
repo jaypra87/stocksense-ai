@@ -2,6 +2,7 @@
 
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
+import { TickerLogo } from "@/components/shared/TickerLogo";
 import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { fmtCurrency, fmtPercent, fmtSignedCurrency, isUp } from "@/lib/format";
@@ -32,11 +33,14 @@ export function QuoteCard({
 
   return (
     <Card className="space-y-2">
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold">{quote.ticker}</span>
-        <span className="truncate text-sm text-muted-foreground">
-          {stock?.company_name ?? ""}
-        </span>
+      <div className="flex items-center gap-2.5">
+        <TickerLogo ticker={quote.ticker} size="md" />
+        <div className="flex min-w-0 items-baseline gap-2">
+          <span className="text-2xl font-bold">{quote.ticker}</span>
+          <span className="truncate text-sm text-muted-foreground">
+            {stock?.company_name ?? ""}
+          </span>
+        </div>
       </div>
 
       <div className="text-4xl font-bold tabular-nums">{fmtCurrency(quote.price, ccy)}</div>

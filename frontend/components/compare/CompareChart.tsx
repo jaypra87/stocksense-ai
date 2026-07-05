@@ -20,7 +20,7 @@ export function CompareChart({ tickers }: { tickers: string[] }) {
   const results = useQueries({
     queries: tickers.map((t) => ({
       queryKey: ["history", t, "6m"],
-      queryFn: () => getHistory(t, "6m" as const),
+      queryFn: () => getHistory(t, "6m"),
     })),
   });
 

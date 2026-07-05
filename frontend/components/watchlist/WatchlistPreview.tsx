@@ -3,6 +3,8 @@
 import { ArrowRight, Star } from "lucide-react";
 import Link from "next/link";
 
+import { Reveal } from "@/components/shared/Reveal";
+import { TickerLogo } from "@/components/shared/TickerLogo";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useWatchlist } from "@/lib/hooks/useWatchlist";
 
@@ -40,17 +42,21 @@ export function WatchlistPreview() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {data.slice(0, 6).map((item) => (
-            <Link
-              key={item.ticker}
-              href={`/stocks/${item.ticker}`}
-              className="hover-lift rounded-xl border border-border bg-card p-3.5 shadow-sm transition-colors hover:border-accent/50 dark:shadow-none"
-            >
-              <div className="font-bold">{item.ticker}</div>
-              <div className="truncate text-xs text-muted-foreground">
-                {item.company_name ?? "—"}
-              </div>
-            </Link>
+          {data.slice(0, 6).map((item, i) => (
+            <Reveal key={item.ticker} delay={i * 50}>
+              <Link
+                href={`/stocks/${item.ticker}`}
+                className="hover-lift flex items-center gap-2.5 rounded-xl border border-border bg-card p-3.5 shadow-sm transition-colors hover:border-accent/50 dark:shadow-none"
+              >
+                <TickerLogo ticker={item.ticker} size="md" />
+                <div className="min-w-0">
+                  <div className="font-bold">{item.ticker}</div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {item.company_name ?? "—"}
+                  </div>
+                </div>
+              </Link>
+            </Reveal>
           ))}
         </div>
       )}

@@ -29,6 +29,11 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  images: {
+    // Company logos (components/shared/TickerLogo). Served through the Next
+    // image optimizer, so the CSP img-src stays same-origin.
+    remotePatterns: [{ protocol: "https", hostname: "assets.parqet.com" }],
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

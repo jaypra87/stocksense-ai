@@ -3,6 +3,8 @@
 import { Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 
+import { Reveal } from "@/components/shared/Reveal";
+import { TickerLogo } from "@/components/shared/TickerLogo";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
@@ -41,16 +43,21 @@ export default function WatchlistPage() {
         />
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-          {data.map((item) => (
-            <li
+          {data.map((item, i) => (
+            <Reveal
+              as="li"
               key={item.ticker}
+              delay={i * 40}
               className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-card-hover"
             >
-              <Link href={`/stocks/${item.ticker}`} className="flex-1">
-                <span className="font-semibold">{item.ticker}</span>
-                {item.company_name && (
-                  <span className="ml-2 text-sm text-muted-foreground">{item.company_name}</span>
-                )}
+              <Link href={`/stocks/${item.ticker}`} className="flex flex-1 items-center gap-3">
+                <TickerLogo ticker={item.ticker} size="sm" />
+                <span>
+                  <span className="font-semibold">{item.ticker}</span>
+                  {item.company_name && (
+                    <span className="ml-2 text-sm text-muted-foreground">{item.company_name}</span>
+                  )}
+                </span>
               </Link>
               <button
                 onClick={() => onRemove(item.ticker)}
@@ -59,7 +66,7 @@ export default function WatchlistPage() {
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
               </button>
-            </li>
+            </Reveal>
           ))}
         </ul>
       )}

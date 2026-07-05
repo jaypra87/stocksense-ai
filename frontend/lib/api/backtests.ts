@@ -7,7 +7,3 @@ export function runBacktest(ticker: string, horizon: Horizon): Promise<Backtest>
     method: "POST",
   });
 }
-
-export function getBacktest(id: string): Promise<Backtest> {
-  return apiFetch<Backtest>(`/backtests/${id}`);
-}

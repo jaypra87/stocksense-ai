@@ -58,23 +58,10 @@ def get_indicators(
         "ticker": ticker,
         "range": range_,
         "interval": "1d",
-        "latest": _latest(enriched),
-        "signals": _signals(enriched),
+        "latest": latest_snapshot(enriched),
+        "signals": signals(enriched),
         "series": [_row_to_point(ts, row) for ts, row in window.iterrows()],
     }
-
-
-# --- public helpers (reused by the risk + prediction services) ---
-
-
-def latest_snapshot(enriched: pd.DataFrame) -> dict:
-    """Latest indicator values from an already-enriched DataFrame."""
-    return _latest(enriched)
-
-
-def signals(enriched: pd.DataFrame) -> dict:
-    """Derived signals from an already-enriched DataFrame."""
-    return _signals(enriched)
 
 
 # --- helpers ---
@@ -121,7 +108,8 @@ def _row_to_point(ts: datetime, row: pd.Series) -> dict:
     return point
 
 
-def _latest(df: pd.DataFrame) -> dict:
+def latest_snapshot(df: pd.DataFrame) -> dict:
+    """Latest indicator values from an already-enriched DataFrame."""
     last = df.iloc[-1]
     out = {"timestamp": df.index[-1].isoformat(), "close": _f(last["close"])}
     for col in _NUMERIC_COLS:
@@ -131,7 +119,8 @@ def _latest(df: pd.DataFrame) -> dict:
     return out
 
 
-def _signals(df: pd.DataFrame) -> dict:
+def signals(df: pd.DataFrame) -> dict:
+    """Derived signals from an already-enriched DataFrame."""
     last = df.iloc[-1]
     rsi_val = _f(last["rsi_14"])
     close = _f(last["close"])

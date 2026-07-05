@@ -8,7 +8,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { useSearch } from "@/lib/hooks/useStocks";
 import { cn } from "@/lib/utils";
 
-export function SearchBar({ autoFocus = false }: { autoFocus?: boolean }) {
+export function SearchBar() {
   const router = useRouter();
   const listboxId = useId();
   const [input, setInput] = useState("");
@@ -92,7 +92,6 @@ export function SearchBar({ autoFocus = false }: { autoFocus?: boolean }) {
             onFocus={() => setOpen(true)}
             onKeyDown={onKeyDown}
             placeholder="Search ticker or company (AAPL, NVDA, Tesla…)"
-            autoFocus={autoFocus}
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
           />
           {isFetching && <Spinner />}

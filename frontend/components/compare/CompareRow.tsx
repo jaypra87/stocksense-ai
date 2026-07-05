@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import Link from "next/link";
 
+import { TickerLogo } from "@/components/shared/TickerLogo";
 import { fmtCurrency, fmtPercent, isUp } from "@/lib/format";
 import { useQuote, useRisk, useSentiment } from "@/lib/hooks/useStocks";
 import { cn } from "@/lib/utils";
@@ -19,8 +20,9 @@ export function CompareRow({ ticker, onRemove }: { ticker: string; onRemove: () 
       <td className="py-2.5 pr-4">
         <Link
           href={`/stocks/${ticker}`}
-          className="font-semibold underline-offset-2 hover:text-accent hover:underline"
+          className="inline-flex items-center gap-2 font-semibold underline-offset-2 hover:text-accent hover:underline"
         >
+          <TickerLogo ticker={ticker} size="sm" />
           {ticker}
         </Link>
       </td>

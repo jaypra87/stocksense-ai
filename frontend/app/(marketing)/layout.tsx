@@ -18,10 +18,22 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           <Logo />
           <nav aria-label="Primary" className="flex items-center gap-1 sm:gap-2">
             <Link
+              href="/#model"
+              className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:block"
+            >
+              Model
+            </Link>
+            <Link
+              href="/#security"
+              className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:block"
+            >
+              Security
+            </Link>
+            <Link
               href="/transparency"
               className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:block"
             >
-              How it works
+              Docs
             </Link>
             <Link
               href="/login"
