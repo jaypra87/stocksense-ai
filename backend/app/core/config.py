@@ -21,12 +21,22 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://stocksense:stocksense@localhost:5432/stocksense"
     )
     redis_url: str = Field(default="redis://localhost:6379/0")
+    # Redis is an optional cache (see app/cache/cache.py): keep the ceiling low
+    # so an unreachable instance degrades latency slightly instead of hanging.
+    redis_timeout_seconds: float = 2.0
 
     cors_origins: str = "http://localhost:3000"
 
     jwt_secret: str = _DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     jwt_expires_minutes: int = 60
+
+    # bcrypt work factor. Each +1 doubles hashing time. 12 is a good default on
+    # real hardware, but on a shared/throttled free-tier CPU it costs ~1.5s per
+    # login. 10 keeps a sane security margin at ~4x the speed. Lowering this
+    # does NOT invalidate existing hashes: bcrypt reads the cost from the hash
+    # itself, so old passwords keep verifying at whatever cost they were made with.
+    bcrypt_rounds: int = Field(default=12, ge=10, le=15)
 
     # Fixed-window rate limits for the auth endpoints (per client IP).
     login_rate_limit: int = 10

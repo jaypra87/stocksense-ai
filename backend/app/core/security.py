@@ -14,7 +14,9 @@ settings = get_settings()
 
 
 def hash_password(plain: str) -> str:
-    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
+    """Hash at the configured work factor (see Settings.bcrypt_rounds)."""
+    salt = bcrypt.gensalt(rounds=settings.bcrypt_rounds)
+    return bcrypt.hashpw(plain.encode(), salt).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:

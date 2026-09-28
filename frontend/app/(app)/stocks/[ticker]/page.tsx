@@ -32,8 +32,15 @@ export default function StockPage() {
   const history = useHistory(ticker, range);
   const indicators = useIndicators(ticker, range);
 
-  // A failing quote is our signal that the ticker is bad / upstream is down.
-  if (quote.isError) {
+  // Quote and history come from different upstream endpoints, and in practice
+  // they fail independently — the live-quote API is the one that gets refused
+  // first, while the chart API keeps serving. So only treat the page as truly
+  // dead when *both* are gone; a lone quote failure costs the price header, not
+  // the chart, indicators, forecast and risk panels below it.
+  const quoteFailed = quote.isError;
+  const nothingLoaded = quote.isError && history.isError;
+
+  if (nothingLoaded) {
     return (
       <Card className="flex items-center gap-3 border-bearish/40" role="alert">
         <AlertCircle className="h-5 w-5 shrink-0 text-bearish" aria-hidden />
@@ -67,12 +74,29 @@ export default function StockPage() {
         {/* Side column first in DOM so price + stats lead on mobile; visually right
             on lg, where it sticks in place while the analysis column scrolls. */}
         <div className="space-y-6 lg:sticky lg:top-20 lg:order-2 lg:self-start">
-          <Reveal>
-            <QuoteCard quote={quote.data} stock={stock.data} isLoading={quote.isLoading} />
-          </Reveal>
-          <Reveal delay={80}>
-            <KeyStats quote={quote.data} isLoading={quote.isLoading} />
-          </Reveal>
+          {quoteFailed ? (
+            <Reveal>
+              <Card className="flex items-center gap-3 border-warning/40" role="status">
+                <AlertCircle className="h-5 w-5 shrink-0 text-warning" aria-hidden />
+                <div>
+                  <p className="font-semibold">Live price unavailable</p>
+                  <p className="text-sm text-muted-foreground">
+                    The quote feed didn&apos;t respond. The chart and analysis below are still
+                    up to date.
+                  </p>
+                </div>
+              </Card>
+            </Reveal>
+          ) : (
+            <>
+              <Reveal>
+                <QuoteCard quote={quote.data} stock={stock.data} isLoading={quote.isLoading} />
+              </Reveal>
+              <Reveal delay={80}>
+                <KeyStats quote={quote.data} isLoading={quote.isLoading} />
+              </Reveal>
+            </>
+          )}
           {stock.data && (stock.data.sector || stock.data.exchange) && (
             <Reveal delay={160} className="hidden lg:block">
               <Card className="space-y-3">

@@ -3,13 +3,13 @@
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, warmBackend } from "@/lib/api/client";
 
 const BRAND_POINTS = [
   "Forecasts with confidence scores and expected ranges",
@@ -25,19 +25,36 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false);
+  const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isLogin = mode === "login";
+
+  // Start the backend waking as soon as this screen is shown, so the cold start
+  // overlaps with typing rather than landing on top of the submit.
+  useEffect(() => {
+    warmBackend();
+    return () => {
+      if (slowTimer.current) clearTimeout(slowTimer.current);
+    };
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setSlow(false);
     setBusy(true);
+    // If the container was still spinning up, the request can genuinely take a
+    // while. Say so rather than leaving a silent spinner that reads as broken.
+    slowTimer.current = setTimeout(() => setSlow(true), 4000);
     try {
       await (isLogin ? login(email, password) : signup(email, password));
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {
+      if (slowTimer.current) clearTimeout(slowTimer.current);
+      setSlow(false);
       setBusy(false);
     }
   }
@@ -132,6 +149,12 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             <Button type="submit" loading={busy} className="w-full">
               {isLogin ? "Sign in" : "Create account"}
             </Button>
+
+            {slow && (
+              <p role="status" className="text-center text-xs text-muted-foreground">
+                Waking the free backend — this can take up to a minute on the first request.
+              </p>
+            )}
           </form>
 
           <p className="text-center text-sm text-muted-foreground">

@@ -70,3 +70,25 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
 
   return parsed as T;
 }
+
+/**
+ * Fire-and-forget ping that wakes a sleeping backend.
+ *
+ * The free hosting tier spins the API container down after idle, and the next
+ * request pays the full cold start. Calling this when the login screen mounts
+ * moves that wait to *while the user is typing their credentials* instead of
+ * after they hit "Sign in", which is the whole of the perceived slowness.
+ *
+ * Deliberately targets /health: it touches no database or cache, so it can
+ * answer as soon as the process is listening. Errors are ignored — this is an
+ * optimization, never a precondition.
+ */
+let warmed = false;
+
+export function warmBackend(): void {
+  if (warmed || typeof window === "undefined") return;
+  warmed = true;
+  void fetch(`${env.NEXT_PUBLIC_API_URL}/health`, { cache: "no-store" }).catch(() => {
+    // A failed pre-warm changes nothing; the real request reports real errors.
+  });
+}

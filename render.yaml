@@ -26,10 +26,13 @@ services:
         value: yfinance      # real Yahoo Finance data (may be rate-limited on cloud IPs; set to "fake" to fall back to synthetic)
       - key: JWT_SECRET
         generateValue: true  # Render generates a strong secret
+      - key: BCRYPT_ROUNDS
+        value: "10"          # free tier has a throttled shared CPU, where the default 12 costs ~1.5s per login
       - key: DATABASE_URL
         sync: false          # paste your Neon connection string (postgresql+psycopg://…)
       - key: REDIS_URL
-        sync: false          # paste your Upstash redis:// URL
+        sync: false          # paste your Upstash rediss:// URL (TLS). Optional: the cache fails open, so an
+                             # unset/dead Redis only costs speed — check /api/v1/health/deep to confirm which.
       - key: CORS_ORIGINS
         sync: false          # set to your Vercel URL, e.g. https://stocksense-ai.vercel.app
 

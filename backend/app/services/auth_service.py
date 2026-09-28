@@ -1,14 +1,24 @@
 """User signup and authentication."""
 
+from functools import lru_cache
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, verify_password
 from app.db.models.user import User
 
-# Compared against when the email doesn't exist, so login takes the same time
-# for unknown and known emails (no timing-based user enumeration).
-_DUMMY_HASH = hash_password("timing-equalization-dummy")
+
+@lru_cache(maxsize=1)
+def _dummy_hash() -> str:
+    """Compared against when the email doesn't exist, so login takes the same
+    time for unknown and known emails (no timing-based user enumeration).
+
+    Computed on first use rather than at import: a bcrypt hash at import time
+    lands squarely in container cold start, where it delays the port binding on
+    small instances. Cached, so only the first unknown-email login pays for it.
+    """
+    return hash_password("timing-equalization-dummy")
 
 
 class EmailTakenError(Exception):
@@ -36,7 +46,7 @@ def authenticate(db: Session, email: str, password: str) -> User:
     email = email.strip().lower()
     user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if user is None:
-        verify_password(password, _DUMMY_HASH)  # burn the same bcrypt time
+        verify_password(password, _dummy_hash())  # burn the same bcrypt time
         raise InvalidCredentialsError()
     if not verify_password(password, user.password_hash):
         raise InvalidCredentialsError()

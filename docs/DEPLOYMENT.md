@@ -24,20 +24,48 @@ Free accounts on: [Neon](https://neon.tech) (Postgres), [Upstash](https://upstas
 ## 3. Backend — Render (Blueprint)
 
 The repo ships a `render.yaml` blueprint and a `backend/start.sh` entrypoint that
-runs migrations → bootstraps a demo user + trained model (`scripts/bootstrap.py`) →
-serves uvicorn on Render's `$PORT`.
+runs migrations → binds the port → bootstraps a demo user + trained model
+(`scripts/bootstrap.py`) in the background.
 
 1. Render → **New → Blueprint** → select this repo. It reads `render.yaml`.
 2. Set the three `sync:false` env vars in the dashboard:
    - `DATABASE_URL` → the Neon string from step 1
    - `REDIS_URL` → the Upstash URL from step 2
    - `CORS_ORIGINS` → your Vercel URL (fill in after step 4, e.g. `https://stocksense-ai.vercel.app`)
-   - (`JWT_SECRET` is auto-generated; `MARKET_DATA_PROVIDER=fake` and `ENVIRONMENT=production` are preset.)
-3. Deploy. First boot runs migrations + trains a model (~30–60s). Health check: `/api/v1/health`.
+   - (`JWT_SECRET` is auto-generated; `MARKET_DATA_PROVIDER`, `BCRYPT_ROUNDS` and
+     `ENVIRONMENT=production` are preset.)
+3. Deploy. Health check: `/api/v1/health`.
 4. Copy the backend URL (e.g. `https://stocksense-backend.onrender.com`).
 
-> Render's free web service spins down after ~15 min idle; the first request after
-> idle cold-starts (and re-trains the model on a fresh disk), so it can take ~30s.
+> Render's free web service spins down after ~15 min idle, so the first request
+> after idle waits for a container start. The entrypoint only blocks on
+> migrations before serving — the demo-data warm and model training run in the
+> background — so that wait is the platform's, not the app's. Set
+> `SKIP_BOOTSTRAP=1` to skip the background work entirely.
+
+### If the deployment misbehaves
+
+`GET /api/v1/health/deep` reports each dependency separately and always answers
+`200`, so a broken one is visible instead of hidden behind a generic error:
+
+```json
+{"status": "degraded", "postgres": "ok", "redis": "unavailable"}
+```
+
+- **`redis: unavailable`** — usually `REDIS_URL` unset or pointed at an expired
+  free-tier instance. The app stays correct without it (the cache fails open),
+  but every request re-fetches from the provider. Note Upstash needs the TLS
+  form, `rediss://`, not `redis://`.
+- **`postgres: unavailable`** — check `DATABASE_URL`. Any of `postgres://`,
+  `postgresql://` or `postgresql+psycopg://` is accepted.
+- **Slow logins on a small instance** — bcrypt dominates the request. Lower
+  `BCRYPT_ROUNDS` (10–15, default 12; each step down is ~2x faster). Existing
+  passwords keep working: bcrypt stores the cost inside each hash.
+- **Blank price/profile but working charts** — Yahoo refuses its
+  crumb-authenticated endpoints (quote, profile, news, search) from datacenter
+  IPs while the chart endpoint keeps serving. The provider falls back to
+  candle-derived values, so pages still render; set `MARKET_DATA_PROVIDER=fake`
+  if you'd rather show fully synthetic data.
 
 ## 4. Frontend — Vercel
 

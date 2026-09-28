@@ -2,6 +2,14 @@
 
 yfinance scrapes Yahoo Finance, so calls can be slow or rate-limited. The cache
 layer above this (see stock_service) is what protects us from hammering it.
+
+Not all Yahoo endpoints are equally available. The chart endpoint behind
+`Ticker.history()` is public, but `fast_info`, `info`, `news` and `Search` go
+through the crumb/cookie-authenticated API, which Yahoo routinely refuses from
+datacenter IPs — so on a cloud host the first group keeps working while the
+second fails. That asymmetry is why the calls below fall back to candles
+wherever a value can be derived from them: a blocked quote endpoint should cost
+us freshness and a few extra fields, not the whole page.
 """
 
 import logging
@@ -19,6 +27,7 @@ from app.services.market_data.base import (
     QuoteDTO,
     SearchResultDTO,
 )
+from app.services.market_data.symbols import search_offline
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +40,7 @@ class YFinanceProvider(MarketDataProvider):
             results = yf.Search(query, max_results=limit).quotes
         except Exception as exc:  # noqa: BLE001 — vendor lib raises bare Exceptions
             logger.warning("yfinance search failed for %r: %s", query, exc)
-            return []
+            results = []
 
         out: list[SearchResultDTO] = []
         for r in results:
@@ -46,6 +55,11 @@ class YFinanceProvider(MarketDataProvider):
                     type=r.get("quoteType"),
                 )
             )
+
+        if not out:
+            # Upstream search refused us (or genuinely knows nothing). Fall back
+            # to the offline index so a name query like "google" still resolves.
+            out = [SearchResultDTO(**r) for r in search_offline(query, limit)]
         return out
 
     def get_quote(self, ticker: str) -> QuoteDTO:
@@ -53,10 +67,11 @@ class YFinanceProvider(MarketDataProvider):
             fi = yf.Ticker(ticker).fast_info
             last = fi.get("lastPrice") if isinstance(fi, dict) else fi.last_price
         except Exception as exc:  # noqa: BLE001
-            raise ProviderError(f"quote fetch failed for {ticker}: {exc}") from exc
+            logger.warning("fast_info failed for %s (%s); deriving from candles", ticker, exc)
+            return self._quote_from_candles(ticker)
 
         if last is None:
-            raise InvalidTickerError(ticker)
+            return self._quote_from_candles(ticker)
 
         def g(attr: str) -> float | None:
             try:
@@ -114,9 +129,15 @@ class YFinanceProvider(MarketDataProvider):
         try:
             info = yf.Ticker(ticker).info
         except Exception as exc:  # noqa: BLE001
-            raise ProviderError(f"metadata fetch failed for {ticker}: {exc}") from exc
+            logger.warning("info failed for %s (%s); falling back to bare metadata", ticker, exc)
+            info = {}
 
         if not info or info.get("symbol") is None and info.get("shortName") is None:
+            # We can't tell "blocked" from "no such ticker" by the error alone, so
+            # ask the endpoint that still works: if the symbol has candles it is
+            # real, and a name-less profile beats failing the whole page.
+            if self._has_candles(ticker):
+                return MetadataDTO(ticker=ticker)
             raise InvalidTickerError(ticker)
 
         return MetadataDTO(
@@ -133,6 +154,60 @@ class YFinanceProvider(MarketDataProvider):
             },
         )
 
+
+    # --- candle-derived fallbacks -------------------------------------------
+    # These exist so a refused quote/profile endpoint degrades to "yesterday's
+    # official close" instead of an error page. Anything the chart endpoint
+    # can't tell us (market cap, 52-week range, live intraday price) is left
+    # None, which every consumer already handles.
+
+    def _recent_daily_candles(self, ticker: str) -> list[CandleDTO]:
+        """Last few daily bars, or [] if even the chart endpoint is unavailable."""
+        try:
+            return self.get_candles(ticker, period="1mo", interval="1d")
+        except ProviderError as exc:
+            logger.warning("candle fallback failed for %s: %s", ticker, exc)
+            return []
+
+    def _has_candles(self, ticker: str) -> bool:
+        return bool(self._recent_daily_candles(ticker))
+
+    def _quote_from_candles(self, ticker: str) -> QuoteDTO:
+        """Build a quote from the most recent daily bar.
+
+        `as_of` is the bar's own timestamp, not now(): the price is a close, and
+        stamping it with the current time would misrepresent a stale figure as
+        live. Callers surface that timestamp, so the staleness stays visible.
+        """
+        candles = self._recent_daily_candles(ticker)
+        if not candles:
+            # Neither the quote endpoint nor the chart endpoint knows this
+            # symbol — at that point "invalid ticker" is the honest answer.
+            raise InvalidTickerError(ticker)
+
+        latest = candles[-1]
+        prev = candles[-2].close if len(candles) > 1 else None
+        change = (latest.close - prev) if prev else None
+        change_pct = (change / prev * 100) if (change is not None and prev) else None
+
+        window = candles[-252:]
+        return QuoteDTO(
+            ticker=ticker,
+            price=latest.close,
+            previous_close=prev,
+            change=change,
+            change_percent=change_pct,
+            open=latest.open,
+            day_high=latest.high,
+            day_low=latest.low,
+            volume=latest.volume,
+            market_cap=None,
+            fifty_two_week_high=max(c.high for c in window),
+            fifty_two_week_low=min(c.low for c in window),
+            currency=None,
+            exchange=None,
+            as_of=latest.timestamp,
+        )
 
     def get_news(self, ticker: str, limit: int = 10) -> list[NewsItemDTO]:
         try:
