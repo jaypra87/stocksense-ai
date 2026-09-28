@@ -3,19 +3,25 @@
 The search and quote endpoints don't touch Postgres, so these run hermetically
 against the in-memory TestClient + local Redis. DB-backed history is verified
 manually / via integration runs.
+
+These routes require authentication, so the fixture signs in as a test user;
+test_access_control.py covers what happens when it doesn't.
 """
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.deps import get_current_user
 from app.main import app
 from app.services.market_data.fake_provider import FakeProvider
 from app.services.market_data.registry import get_provider
+from tests.conftest import make_user
 
 
 @pytest.fixture
 def fake_client() -> TestClient:
     app.dependency_overrides[get_provider] = lambda: FakeProvider()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
     yield TestClient(app)
     app.dependency_overrides.clear()
 

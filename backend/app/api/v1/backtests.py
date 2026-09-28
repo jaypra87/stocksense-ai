@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.api.errors import provider_error
+from app.core.config import get_settings
+from app.core.rate_limit import rate_limit
 from app.db.models.user import User
 from app.db.session import get_db
 from app.ml.backtest import NotEnoughDataError
@@ -14,7 +16,15 @@ from app.services import backtest_service
 from app.services.market_data.base import InvalidTickerError, MarketDataProvider, ProviderError
 from app.services.market_data.registry import get_provider
 
-router = APIRouter(prefix="/backtests", tags=["backtests"])
+_settings = get_settings()
+# A walk-forward backtest is the heaviest request the API serves.
+_backtest_limiter = rate_limit(
+    "backtest", _settings.backtest_rate_limit, _settings.backtest_rate_window_seconds
+)
+
+router = APIRouter(
+    prefix="/backtests", tags=["backtests"], dependencies=[Depends(_backtest_limiter)]
+)
 
 _VALID_HORIZONS = list(HORIZON_DAYS)
 

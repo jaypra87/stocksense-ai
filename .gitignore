@@ -16,9 +16,23 @@ out/
 .pnpm-store/
 
 # --- Env files (never commit secrets) ---
+# Ignore every .env variant, then re-allow the committed templates. The previous
+# rules missed unsuffixed names like .env.production and .env.staging.
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
+
+# --- Credentials / keys ---
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+secrets.json
+credentials.json
+service-account*.json
 
 # --- ML artifacts (large binaries; ship via volume / object storage) ---
 backend/app/ml/artifacts/*

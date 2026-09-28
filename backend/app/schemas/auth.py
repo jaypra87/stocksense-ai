@@ -1,7 +1,13 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserCreate(BaseModel):
+    # Reject unknown keys rather than silently dropping them: a request that
+    # tries to set a field it doesn't own (say a future `role` or `id`) should
+    # fail loudly, not appear to succeed. The User model has no privilege
+    # columns today — this keeps that true if one is ever added.
+    model_config = ConfigDict(extra="forbid")
+
     email: EmailStr
     # bcrypt only uses the first 72 bytes; cap new passwords there so every
     # character the user types actually contributes to the hash.
@@ -9,6 +15,8 @@ class UserCreate(BaseModel):
 
 
 class LoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: EmailStr
     password: str = Field(max_length=128)
 

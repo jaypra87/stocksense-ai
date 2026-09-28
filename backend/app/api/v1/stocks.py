@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from redis import Redis
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.api.errors import provider_error
 from app.cache.redis_client import get_redis
 from app.db.session import get_db
@@ -17,7 +18,15 @@ from app.services.market_data.base import (
 )
 from app.services.market_data.registry import get_provider
 
-router = APIRouter(prefix="/stocks", tags=["stocks"])
+# Auth is declared on the router, not per-endpoint, so a new route can't quietly
+# ship unprotected. The browser already gates every page that calls these, but
+# that is a UI convenience — it is not a control. Without this the API happily
+# served market data, ran indicator/risk computation and wrote rows
+# (stocks, price_candles, risk_snapshots, sentiment_snapshots) for anyone on the
+# internet. The public surface is deliberately small: /health, /auth and /models.
+router = APIRouter(
+    prefix="/stocks", tags=["stocks"], dependencies=[Depends(get_current_user)]
+)
 
 _VALID_RANGES = ["1d", "5d", "1m", "6m", "ytd", "1y", "5y"]
 

@@ -16,11 +16,13 @@ from fastapi.testclient import TestClient
 from redis import ConnectionError as RedisConnectionError
 from redis.exceptions import RedisError
 
+from app.api.deps import get_current_user
 from app.cache.cache import cached_json
 from app.cache.redis_client import get_redis
 from app.main import app
 from app.services.market_data.fake_provider import FakeProvider
 from app.services.market_data.registry import get_provider
+from tests.conftest import make_user
 
 
 class BrokenRedis:
@@ -43,6 +45,7 @@ class BrokenRedis:
 def no_redis_client() -> TestClient:
     app.dependency_overrides[get_provider] = lambda: FakeProvider()
     app.dependency_overrides[get_redis] = lambda: BrokenRedis()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
     yield TestClient(app)
     app.dependency_overrides.clear()
 
