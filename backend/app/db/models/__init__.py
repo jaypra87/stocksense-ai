@@ -7,6 +7,7 @@ from app.db.models.prediction import Prediction
 from app.db.models.price_candle import PriceCandle
 from app.db.models.risk_snapshot import RiskSnapshot
 from app.db.models.sentiment_snapshot import SentimentSnapshot
+from app.db.models.session import UserSession
 from app.db.models.stock import Stock
 from app.db.models.technical_indicator import TechnicalIndicator
 from app.db.models.user import User
@@ -24,5 +25,6 @@ __all__ = [
     "Stock",
     "TechnicalIndicator",
     "User",
+    "UserSession",
     "WatchlistItem",
 ]

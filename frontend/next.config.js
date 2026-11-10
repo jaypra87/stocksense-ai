@@ -1,17 +1,21 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const API_ORIGIN = new URL(API_URL).origin;
 const isDev = process.env.NODE_ENV !== "production";
 
-// Content-Security-Policy: scripts/styles self-hosted; network calls limited to
-// the app itself + the backend API. 'unsafe-inline'/'unsafe-eval' concessions
-// are what Next.js requires (eval only in dev for react-refresh).
+// Cloudflare Turnstile (bot check) runs from this origin: its script, and an
+// iframe for the (usually invisible) challenge.
+const TURNSTILE = "https://challenges.cloudflare.com";
+
+// Content-Security-Policy: scripts/styles self-hosted, plus Turnstile; network
+// calls limited to this origin (the API is proxied under /api/v1, so the
+// backend's address never appears here). 'unsafe-inline'/'unsafe-eval'
+// concessions are what Next.js requires (eval only in dev for react-refresh).
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' ${TURNSTILE}${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  `connect-src 'self' ${API_ORIGIN}${isDev ? " ws:" : ""}`,
+  `connect-src 'self' ${TURNSTILE}${isDev ? " ws:" : ""}`,
+  `frame-src ${TURNSTILE}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -23,6 +27,8 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  // HSTS: Vercel serves HTTPS only; browsers that see this never try http://.
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
 
 /** @type {import('next').NextConfig} */

@@ -1,0 +1,34 @@
+name: Keep the API warm
+
+# The backend runs on a free tier that sleeps after ~15 minutes idle and takes
+# over a minute to wake. A ping every 10 minutes keeps it listening, so the
+# first visitor of the hour doesn't pay the cold start.
+#
+# The URL is a repository *variable* (Settings → Secrets and variables →
+# Actions → Variables → HEALTH_URL), not committed, e.g.
+#   https://<your-vercel-domain>/api/v1/health
+# Pinging through the Vercel proxy warms both hops at once.
+#
+# GitHub may delay or skip scheduled runs under load, so this reduces cold
+# starts rather than eliminating them. Disable the workflow if the repo goes
+# quiet for 60 days (GitHub disables it anyway) or if you move to a paid tier.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    if: ${{ vars.HEALTH_URL != '' }}
+    steps:
+      - name: GET ${{ vars.HEALTH_URL }}
+        run: |
+          start=$(date +%s)
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 "$HEALTH_URL" || echo "000")
+          echo "status=$code elapsed=$(( $(date +%s) - start ))s"
+          test "$code" = "200"
+        env:
+          HEALTH_URL: ${{ vars.HEALTH_URL }}

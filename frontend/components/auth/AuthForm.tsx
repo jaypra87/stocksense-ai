@@ -3,13 +3,14 @@
 import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Turnstile, turnstileEnabled } from "@/components/auth/Turnstile";
 import { Logo } from "@/components/shared/Logo";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { ApiError, warmBackend } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/client";
 
 const BRAND_POINTS = [
   "Forecasts with confidence scores and expected ranges",
@@ -17,47 +18,58 @@ const BRAND_POINTS = [
   "Honest walk-forward backtests vs naive baselines",
 ];
 
+/**
+ * Optional account screens. Nobody is sent here: the app works as a guest from
+ * the first visit. "Save your account" attaches an email and password to the
+ * current guest so its watchlist and alerts follow the user to other devices;
+ * "Sign in" returns to an existing account and brings the guest's data along.
+ */
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
-  const { login, signup } = useAuth();
+  const { user, login, signup } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [widgetKey, setWidgetKey] = useState(0);
   const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isLogin = mode === "login";
-
-  // Start the backend waking as soon as this screen is shown, so the cold start
-  // overlaps with typing rather than landing on top of the submit.
-  useEffect(() => {
-    warmBackend();
-    return () => {
-      if (slowTimer.current) clearTimeout(slowTimer.current);
-    };
-  }, []);
+  const isGuest = user?.is_guest ?? true;
+  const hasAccount = user !== null && !user.is_guest;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSlow(false);
     setBusy(true);
-    // If the container was still spinning up, the request can genuinely take a
-    // while. Say so rather than leaving a silent spinner that reads as broken.
     slowTimer.current = setTimeout(() => setSlow(true), 4000);
     try {
-      await (isLogin ? login(email, password) : signup(email, password));
+      await (isLogin ? login(email, password, token) : signup(email, password, token));
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      // A Turnstile token is single-use; a fresh widget gets a fresh one.
+      setToken(null);
+      setWidgetKey((k) => k + 1);
     } finally {
       if (slowTimer.current) clearTimeout(slowTimer.current);
       setSlow(false);
       setBusy(false);
     }
   }
+
+  const heading = isLogin ? "Sign in" : hasAccount ? "You already have an account" : "Save your account";
+  const blurb = isLogin
+    ? isGuest
+      ? "Anything you've saved as a guest comes with you."
+      : "Sign in to a different account."
+    : hasAccount
+      ? `You're signed in as ${user?.email}.`
+      : "Keep your watchlist and alerts on every device. Nothing is lost — your guest data stays with you.";
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
@@ -93,77 +105,92 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             <Logo />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {isLogin ? "Welcome back" : "Create your account"}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {isLogin ? "Sign in to your dashboard." : "Start tracking stocks in seconds."}
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{blurb}</p>
           </div>
 
-          <form onSubmit={onSubmit} className="space-y-4">
-            <Input
-              type="email"
-              label="Email"
-              autoComplete="email"
-              required
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                label="Password"
-                autoComplete={isLogin ? "current-password" : "new-password"}
-                required
-                minLength={8}
-                placeholder={isLogin ? "Your password" : "At least 8 characters"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-2 top-[34px] rounded p-1 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" aria-hidden />
-                ) : (
-                  <Eye className="h-4 w-4" aria-hidden />
-                )}
-              </button>
-            </div>
-
-            {error && (
-              <p
-                role="alert"
-                className="rounded-lg border border-bearish/40 bg-bearish/10 px-3 py-2 text-sm text-bearish"
-              >
-                {error}
-              </p>
-            )}
-
-            <Button type="submit" loading={busy} className="w-full">
-              {isLogin ? "Sign in" : "Create account"}
+          {!isLogin && hasAccount ? (
+            <Button onClick={() => router.push("/dashboard")} className="w-full">
+              Back to the dashboard
             </Button>
+          ) : (
+            <form onSubmit={onSubmit} className="space-y-4">
+              <Input
+                type="email"
+                label="Email"
+                autoComplete="email"
+                required
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  label="Password"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  required
+                  minLength={8}
+                  maxLength={72}
+                  placeholder={isLogin ? "Your password" : "At least 8 characters"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-[34px] text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
 
-            {slow && (
-              <p role="status" className="text-center text-xs text-muted-foreground">
-                Waking the free backend — this can take up to a minute on the first request.
-              </p>
-            )}
-          </form>
+              {turnstileEnabled && (
+                <Turnstile key={widgetKey} action={isLogin ? "login" : "signup"} onToken={setToken} />
+              )}
+
+              {error && (
+                <p role="alert" className="text-sm text-bearish">
+                  {error}
+                </p>
+              )}
+              {busy && slow && (
+                <p className="text-xs text-muted-foreground">
+                  Still working — the server may be waking up.
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={busy || (turnstileEnabled && !token)}
+              >
+                {busy ? "Please wait…" : isLogin ? "Sign in" : "Save account"}
+              </Button>
+            </form>
+          )}
 
           <p className="text-center text-sm text-muted-foreground">
-            {isLogin ? "No account? " : "Already have an account? "}
-            <Link
-              href={isLogin ? "/signup" : "/login"}
-              className="font-semibold text-accent underline-offset-4 hover:underline"
-            >
-              {isLogin ? "Sign up" : "Sign in"}
+            {isLogin ? (
+              <>
+                No account yet?{" "}
+                <Link href="/signup" className="font-medium text-accent hover:underline">
+                  Save your guest session as one
+                </Link>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <Link href="/login" className="font-medium text-accent hover:underline">
+                  Sign in
+                </Link>
+              </>
+            )}
+            {" · "}
+            <Link href="/dashboard" className="font-medium hover:underline">
+              Continue as guest
             </Link>
           </p>
         </div>

@@ -26,6 +26,15 @@ services:
         value: yfinance      # real Yahoo Finance data (may be rate-limited on cloud IPs; set to "fake" to fall back to synthetic)
       - key: JWT_SECRET
         generateValue: true  # Render generates a strong secret
+      - key: EMAIL_ENCRYPTION_KEY
+        sync: false          # REQUIRED: `openssl rand -hex 32`. Emails are stored encrypted with it;
+                             # losing it makes existing addresses unreadable, so back it up.
+      - key: PROXY_SHARED_SECRET
+        sync: false          # same value as API_PROXY_SECRET on Vercel; lets the backend trust the
+                             # client IP the frontend proxy reports (`openssl rand -hex 32`)
+      - key: TURNSTILE_SECRET_KEY
+        sync: false          # Cloudflare Turnstile secret key (bot protection). Optional but
+                             # strongly recommended: without it no challenge is ever issued.
       - key: BCRYPT_ROUNDS
         value: "10"          # free tier has a throttled shared CPU, where the default 12 costs ~1.5s per login
       - key: DATABASE_URL
@@ -34,7 +43,8 @@ services:
         sync: false          # paste your Upstash rediss:// URL (TLS). Optional: the cache fails open, so an
                              # unset/dead Redis only costs speed — check /api/v1/health/deep to confirm which.
       - key: CORS_ORIGINS
-        sync: false          # set to your Vercel URL, e.g. https://stocksense-ai.vercel.app
+        sync: false          # your Vercel URL, e.g. https://stocksense-ai.vercel.app. Also the
+                             # allow-list for the Origin check on state-changing requests.
 
 # To add scheduled alert checks later (paid Render workers), add:
 #  - type: worker

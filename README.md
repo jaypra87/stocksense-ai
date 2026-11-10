@@ -59,10 +59,10 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full breakdown.
 | --- | --- |
 | Frontend | Next.js (App Router), TypeScript, Tailwind, React Query, Recharts |
 | Backend | FastAPI, SQLAlchemy 2.0, Alembic, Pydantic v2 |
-| Database | PostgreSQL |
+| Database | PostgreSQL with row-level security; emails encrypted at rest (AES-GCM) |
 | Cache / jobs | Redis, Celery (worker + beat) |
 | ML | pandas, NumPy, scikit-learn (RandomForest) |
-| Auth | JWT (PyJWT) + bcrypt |
+| Auth | Silent guest sessions (httpOnly cookie, DB-backed, revocable) + optional email/password account; bcrypt; Cloudflare Turnstile |
 | Deploy | Vercel (frontend) + Render/Fly (backend, Dockerized) |
 
 ## Quick start
@@ -105,7 +105,8 @@ MARKET_DATA_PROVIDER=fake celery -A app.workers.celery_app worker --loglevel=inf
 MARKET_DATA_PROVIDER=fake celery -A app.workers.celery_app beat   --loglevel=info   # another
 ```
 
-**Demo login** (after seeding): `demo@stocksense.ai` / `demopassword123`
+**No login needed.** Opening the dashboard starts a guest session automatically; "Save account" in the header turns it into an account.
+The seeded demo account (`demo@stocksense.ai` / `demopassword123`) still exists for the sign-in flow.
 
 ### Market data providers
 
@@ -157,7 +158,8 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Dockerized backend on Render/Fl
 - Baseline ML models are not expected to be profitable; this is a demonstration of an end-to-end, *honest* ML system, not a trading edge.
 - Sentiment uses a lexicon classifier (FinBERT/LLM is a documented upgrade).
 - yfinance is rate-limited and unofficial; production should use a paid provider.
-- JWT is stored in `localStorage` (XSS trade-off vs httpOnly cookies; acceptable for an educational SPA).
+- Guest sessions are per browser: clearing cookies (or 30 days away) loses a guest's watchlist unless they save an account.
+- Bot protection (Turnstile) is off until its keys are configured; rate limits still apply. See [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Disclaimer
 

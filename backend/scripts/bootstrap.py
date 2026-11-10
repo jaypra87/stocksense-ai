@@ -17,7 +17,7 @@ from sqlalchemy import select  # noqa: E402
 
 from app.core.logging import configure_logging  # noqa: E402
 from app.db.models.model_artifact import ModelArtifact  # noqa: E402
-from app.db.session import SessionLocal  # noqa: E402
+from app.db.session import system_session  # noqa: E402
 from app.ml.training import train_and_register  # noqa: E402
 from app.services import (  # noqa: E402
     auth_service,
@@ -45,7 +45,7 @@ def _has_usable_model(db) -> bool:
 
 def main() -> None:
     configure_logging()
-    db = SessionLocal()
+    db = system_session()  # scripts act for no one user; bypass RLS
     provider = get_provider()
     try:
         # Demo user (idempotent).
@@ -79,6 +79,10 @@ def main() -> None:
                 watchlist_service.add(db, user.id, ticker)
             except Exception as exc:  # noqa: BLE001
                 log.warning("watchlist add %s failed: %s", ticker, exc)
+
+        # Housekeeping that the Celery beat would do, were it deployed.
+        purged = auth_service.purge_expired(db)
+        log.info("purged expired sessions/guests: %s", purged)
 
         log.info("bootstrap complete")
     finally:

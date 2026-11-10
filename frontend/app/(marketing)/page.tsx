@@ -250,10 +250,10 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                href="/signup"
+                href="/dashboard"
                 className="group inline-flex h-11 items-center gap-2 rounded-md bg-accent px-6 font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
               >
-                Create a free account
+                Open the dashboard
                 <ArrowRight
                   className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
                   aria-hidden
@@ -636,10 +636,10 @@ export default function LandingPage() {
           </Reveal>
           <Reveal delay={100} className="flex flex-wrap gap-3">
             <Link
-              href="/signup"
+              href="/dashboard"
               className="group inline-flex h-11 items-center gap-2 rounded-md bg-accent px-6 font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
             >
-              Create a free account
+              Open the dashboard
               <ArrowRight
                 className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
                 aria-hidden

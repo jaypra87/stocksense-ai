@@ -16,7 +16,7 @@ celery_app = Celery(
     "stocksense",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.workers.tasks.check_alerts"],
+    include=["app.workers.tasks.check_alerts", "app.workers.tasks.purge_sessions"],
 )
 
 celery_app.conf.update(
@@ -28,6 +28,10 @@ celery_app.conf.update(
         "check-alerts-every-minute": {
             "task": "app.workers.tasks.check_alerts.check_alerts",
             "schedule": 60.0,  # seconds
+        },
+        "purge-expired-sessions-daily": {
+            "task": "app.workers.tasks.purge_sessions.purge_sessions",
+            "schedule": 24 * 3600.0,
         },
     },
 )

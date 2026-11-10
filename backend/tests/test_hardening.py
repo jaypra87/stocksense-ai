@@ -45,9 +45,24 @@ def test_production_rejects_short_jwt_secret() -> None:
         Settings(environment="production", jwt_secret="short", _env_file=None)
 
 
+_PROD_OK = {"jwt_secret": "x" * 48, "email_encryption_key": "ab" * 32, "_env_file": None}
+
+
 def test_production_accepts_strong_jwt_secret() -> None:
-    s = Settings(environment="production", jwt_secret="x" * 48, _env_file=None)
+    s = Settings(environment="production", **_PROD_OK)
     assert s.environment == "production"
+
+
+def test_production_requires_an_email_encryption_key() -> None:
+    with pytest.raises(ValueError, match="EMAIL_ENCRYPTION_KEY"):
+        Settings(environment="production", jwt_secret="x" * 48, _env_file=None)
+
+
+def test_email_encryption_key_must_be_32_bytes_of_hex() -> None:
+    with pytest.raises(ValueError, match="32 bytes"):
+        Settings(email_encryption_key="ab" * 16, _env_file=None)
+    with pytest.raises(ValueError, match="hex"):
+        Settings(email_encryption_key="zz" * 32, _env_file=None)
 
 
 def test_development_allows_default_secret() -> None:
@@ -69,15 +84,19 @@ def test_rate_limit_blocks_after_threshold() -> None:
     assert excinfo.value.headers["Retry-After"] == "42"
 
 
-def test_rate_limit_uses_forwarded_ip() -> None:
+def test_rate_limit_uses_the_proxy_appended_forwarded_ip() -> None:
+    """Only the *rightmost* X-Forwarded-For entry is trusted: it is the one our
+    own load balancer appended. Anything to its left was supplied by the
+    client and would let an attacker choose their own bucket."""
     limiter = rate_limit("fwd", limit=1, window_seconds=60)
     redis = FakeRedis()
 
     limiter(FakeRequest(forwarded="198.51.100.1, 10.0.0.1"), redis)
-    # A different forwarded IP gets its own bucket.
+    # A different trusted IP gets its own bucket.
     limiter(FakeRequest(forwarded="198.51.100.2"), redis)
+    # Same trusted IP with a spoofed leftmost entry: still the same bucket.
     with pytest.raises(HTTPException):
-        limiter(FakeRequest(forwarded="198.51.100.1"), redis)
+        limiter(FakeRequest(forwarded="203.0.113.99, 10.0.0.1"), redis)
 
 
 def test_security_headers_present() -> None:

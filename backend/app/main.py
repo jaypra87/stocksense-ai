@@ -12,6 +12,8 @@ from app.core.logging import configure_logging
 
 logger = logging.getLogger("stocksense.request")
 
+_UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -64,9 +66,31 @@ def create_app() -> FastAPI:
         allow_origins=settings.cors_origins_list,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type"],
+        allow_headers=["Authorization", "Content-Type", "X-Proxy-Secret", "X-Client-IP"],
     )
     app.middleware("http")(log_requests)
+
+    # CSRF, second layer. The session cookie is SameSite=Lax, which already
+    # keeps it off cross-site POSTs in every current browser. This check backs
+    # that up: browsers attach an Origin header to every cross-origin
+    # state-changing request and it cannot be set by page script, so a
+    # mismatch is a request a foreign page made on the user's behalf. Requests
+    # with no Origin (curl, server-to-server, same-origin GET) pass through —
+    # they are not the attack this stops.
+    allowed_origins = set(settings.cors_origins_list)
+
+    @app.middleware("http")
+    async def reject_cross_site_writes(request: Request, call_next):
+        if request.method in _UNSAFE_METHODS:
+            origin = request.headers.get("origin")
+            if origin and origin not in allowed_origins:
+                logger.warning(
+                    "Rejected cross-site %s %s from %s", request.method, request.url.path, origin
+                )
+                return JSONResponse(
+                    status_code=403, content={"detail": "Cross-site request refused"}
+                )
+        return await call_next(request)
 
     security_headers = make_security_headers(settings.environment == "production")
 

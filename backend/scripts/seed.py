@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.core.logging import configure_logging  # noqa: E402
-from app.db.session import SessionLocal  # noqa: E402
+from app.db.session import system_session  # noqa: E402
 from app.ml.training import train_and_register  # noqa: E402
 from app.services import (  # noqa: E402
     alert_service,
@@ -33,7 +33,7 @@ TICKERS = ["AAPL", "MSFT", "NVDA", "TSLA"]
 
 def main() -> None:
     configure_logging()
-    db = SessionLocal()
+    db = system_session()  # scripts act for no one user; bypass RLS
     provider = get_provider()
 
     try:

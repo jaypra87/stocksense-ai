@@ -37,7 +37,35 @@ class Settings(BaseSettings):
 
     jwt_secret: str = _DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
-    jwt_expires_minutes: int = 60
+    # Lifetime of a session (and of the cookie that carries it). Guests have no
+    # password to come back with, so this is how long a guest's watchlist
+    # survives between visits. Sessions are rows in the `sessions` table and can
+    # be revoked at any time; the cookie's expiry is only the outer bound.
+    session_ttl_days: int = 30
+    session_cookie_name: str = "ss_session"
+    # Secure cookies are refused by browsers over plain http://localhost, so the
+    # flag follows the environment. SameSite=Lax is always on: the frontend
+    # proxies the API under its own origin, which makes the cookie first-party.
+    session_cookie_secure: bool | None = None
+
+    # Email addresses are stored encrypted (AES-256-GCM) with a keyed hash for
+    # lookups, so a leaked database dump exposes no addresses. 64 hex chars
+    # (`openssl rand -hex 32`). Required in production; a fixed, publicly-known
+    # key is used in development so the app runs with no setup.
+    email_encryption_key: str | None = None
+
+    # Shared secret the frontend's API proxy attaches to every forwarded request.
+    # When it matches, the proxy's X-Client-IP header is trusted for rate
+    # limiting (the proxy sits on Vercel, which overwrites X-Forwarded-For with
+    # the real client address and cannot be spoofed). Without it the app only
+    # trusts the address its own platform's load balancer appends.
+    proxy_shared_secret: str | None = None
+
+    # Cloudflare Turnstile (bot protection). Both unset = disabled, which is
+    # logged loudly in production. The site key is public (it ships to browsers);
+    # the secret key verifies tokens server-side.
+    turnstile_site_key: str | None = None
+    turnstile_secret_key: str | None = None
 
     # bcrypt work factor. Each +1 doubles hashing time. 12 is a good default on
     # real hardware, but on a shared/throttled free-tier CPU it costs ~1.5s per
@@ -51,6 +79,11 @@ class Settings(BaseSettings):
     login_rate_window_seconds: int = 300
     signup_rate_limit: int = 5
     signup_rate_window_seconds: int = 3600
+    # Guest sessions are minted silently on first visit, so this is the cap on
+    # how many identities one address can create. Above it the client must
+    # pass a Turnstile challenge (when configured) to get another.
+    guest_rate_limit: int = 20
+    guest_rate_window_seconds: int = 3600
 
     # Model inference and walk-forward backtests are the two endpoints that cost
     # real CPU per call, on an instance sized for a demo. Authentication already
@@ -141,9 +174,47 @@ class Settings(BaseSettings):
                 )
         return self
 
+    @model_validator(mode="after")
+    def _require_email_key_in_prod(self) -> "Settings":
+        """Encrypted emails are only as private as the key. Production must
+        supply its own; development falls back to a fixed key so `uvicorn`
+        just works, at the cost of that key being in the repo."""
+        if self.environment == "production" and not self.email_encryption_key:
+            raise ValueError(
+                "EMAIL_ENCRYPTION_KEY must be set in production "
+                "(64 hex characters, e.g. `openssl rand -hex 32`)."
+            )
+        if self.email_encryption_key is not None:
+            try:
+                raw = bytes.fromhex(self.email_encryption_key)
+            except ValueError:
+                raise ValueError("EMAIL_ENCRYPTION_KEY must be hex-encoded") from None
+            if len(raw) != 32:
+                raise ValueError("EMAIL_ENCRYPTION_KEY must decode to exactly 32 bytes")
+        return self
+
+    @model_validator(mode="after")
+    def _warn_when_bot_protection_is_off_in_prod(self) -> "Settings":
+        if self.environment == "production" and not self.turnstile_secret_key:
+            logging.getLogger("stocksense.config").warning(
+                "TURNSTILE_SECRET_KEY is not set: bot protection is DISABLED. "
+                "Rate limits still apply, but no challenge is ever issued."
+            )
+        return self
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def cookie_secure(self) -> bool:
+        if self.session_cookie_secure is not None:
+            return self.session_cookie_secure
+        return self.environment == "production"
+
+    @property
+    def turnstile_enabled(self) -> bool:
+        return bool(self.turnstile_secret_key)
 
 
 @lru_cache

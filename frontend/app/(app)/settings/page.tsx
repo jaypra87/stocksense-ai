@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
@@ -13,7 +14,7 @@ const RANGE_KEY = "stocksense_default_range";
 const THEMES = ["light", "dark", "system"] as const;
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, logoutEverywhere } = useAuth();
   const { theme, setTheme } = useTheme();
   const [defaultRange, setDefaultRange] = useState<Range>("1y");
   const [mounted, setMounted] = useState(false);
@@ -38,12 +39,46 @@ export default function SettingsPage() {
 
       <Card className="space-y-3">
         <CardTitle>Account</CardTitle>
-        <p className="text-sm">
-          Signed in as <span className="font-semibold">{user?.email}</span>
-        </p>
-        <Button variant="destructive" size="sm" onClick={logout}>
-          Sign out
-        </Button>
+        {user?.is_guest ? (
+          <>
+            <p className="text-sm text-muted-foreground">
+              You&apos;re using StockSense as a guest. Your watchlist and alerts are saved to this
+              browser for 30 days. Save an account to keep them on every device.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/signup"
+                className="inline-flex h-9 items-center rounded-md bg-accent px-3 text-sm font-semibold text-accent-foreground hover:bg-accent-hover"
+              >
+                Save your account
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium hover:bg-muted"
+              >
+                Sign in to an existing account
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-sm">
+              Signed in as <span className="font-semibold">{user?.email}</span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="destructive" size="sm" onClick={() => void logout()}>
+                Sign out
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => void logoutEverywhere()}>
+                Sign out everywhere
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              &ldquo;Sign out everywhere&rdquo; ends every session for this account, including other
+              devices.
+            </p>
+          </>
+        )}
       </Card>
 
       <Card className="space-y-3">

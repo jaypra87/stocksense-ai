@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, GitCompare, LogOut, Menu, Settings, Star, X } from "lucide-react";
+import { Bell, GitCompare, LogOut, Menu, Settings, Star, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -70,9 +70,17 @@ export function Header() {
             <Settings className="h-4 w-4" aria-hidden />
           </Link>
           <ThemeToggle />
-          {user && (
+          {user?.is_guest && (
+            <Link
+              href="/signup"
+              className="flex h-9 items-center gap-1.5 rounded-md bg-accent px-3 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover"
+            >
+              <UserPlus className="h-4 w-4" aria-hidden /> Save account
+            </Link>
+          )}
+          {user && !user.is_guest && (
             <button
-              onClick={logout}
+              onClick={() => void logout()}
               aria-label={`Sign out (${user.email})`}
               className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
@@ -118,9 +126,17 @@ export function Header() {
             ))}
             <li className="flex items-center justify-between gap-2 px-3 pt-2">
               <ThemeToggle />
-              {user && (
+              {user?.is_guest && (
+                <Link
+                  href="/signup"
+                  className="flex items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground"
+                >
+                  <UserPlus className="h-4 w-4" aria-hidden /> Save account
+                </Link>
+              )}
+              {user && !user.is_guest && (
                 <button
-                  onClick={logout}
+                  onClick={() => void logout()}
                   className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <LogOut className="h-4 w-4" aria-hidden /> Sign out

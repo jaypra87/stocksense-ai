@@ -1,0 +1,53 @@
+name: Dependency audit
+
+# Known-vulnerability scan of both dependency trees. Runs on every change to a
+# manifest and weekly regardless, because advisories arrive without commits.
+on:
+  push:
+    branches: [main]
+    paths:
+      - backend/pyproject.toml
+      - frontend/package.json
+      - frontend/package-lock.json
+      - .github/workflows/security.yml
+  pull_request:
+    paths:
+      - backend/pyproject.toml
+      - frontend/package.json
+      - frontend/package-lock.json
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: pip-audit (backend)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e . pip-audit
+      # --strict fails on unfixable findings too, so nothing is silently skipped.
+      - run: pip-audit --strict --desc
+
+  node:
+    name: npm audit (frontend)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci --ignore-scripts
+      - run: npm audit --audit-level=high

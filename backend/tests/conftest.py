@@ -56,7 +56,14 @@ def make_user(email: str = "tester@example.com") -> User:
     Endpoint tests care about *authorization* (which user the request acts as),
     not about how the row got there, so a detached model is enough.
     """
-    return User(id=uuid.uuid4(), email=email, password_hash="x", preferences={})
+    return User(
+        id=uuid.uuid4(),
+        email=email,
+        email_hash="x" * 64,
+        password_hash="x",
+        is_guest=False,
+        preferences={},
+    )
 
 
 @pytest.fixture

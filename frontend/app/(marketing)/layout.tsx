@@ -42,10 +42,10 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               Sign in
             </Link>
             <Link
-              href="/signup"
+              href="/dashboard"
               className="rounded-lg bg-accent px-3.5 py-1.5 text-sm font-semibold text-accent-foreground shadow-sm transition-colors hover:bg-accent-hover"
             >
-              Get started
+              Open dashboard
             </Link>
           </nav>
         </div>

@@ -47,6 +47,9 @@ PROTECTED: list[tuple[str, str]] = [
     ("GET", "/api/v1/backtests"),
     ("POST", "/api/v1/backtests/NVDA"),
     ("GET", "/api/v1/auth/me"),
+    ("GET", "/api/v1/auth/sessions"),
+    ("POST", "/api/v1/auth/logout"),
+    ("POST", "/api/v1/auth/logout-all"),
 ]
 
 # Deliberately open: liveness probes and the model transparency page, which is
@@ -64,6 +67,9 @@ PUBLIC_AUTH_FLOW: list[str] = [
     "/api/v1/auth/signup",
 ]
 
+# Also anonymous by nature: this is how a visitor *gets* a session.
+PUBLIC_SESSION_START: list[str] = ["/api/v1/auth/guest"]
+
 
 @pytest.mark.parametrize(("method", "path"), PROTECTED)
 def test_protected_routes_reject_anonymous_callers(
@@ -78,6 +84,17 @@ def test_protected_routes_reject_a_forged_token(
     client: TestClient, method: str, path: str
 ) -> None:
     resp = client.request(method, path, headers={"Authorization": "Bearer not.a.real.jwt"})
+    assert resp.status_code == 401, f"{method} {path} returned {resp.status_code}"
+
+
+@pytest.mark.parametrize(("method", "path"), PROTECTED)
+def test_protected_routes_reject_a_forged_cookie(
+    client: TestClient, method: str, path: str
+) -> None:
+    """The cookie is the browser's credential; a made-up one must be as useless
+    as a made-up bearer token."""
+    client.cookies.set("ss_session", "not.a.real.jwt")
+    resp = client.request(method, path)
     assert resp.status_code == 401, f"{method} {path} returned {resp.status_code}"
 
 
@@ -99,7 +116,12 @@ def test_auth_flow_is_reachable_without_a_token(client: TestClient, path: str) -
 
 def test_no_route_was_left_out_of_the_protected_list() -> None:
     """Fails when a new route ships without a decision about its auth posture."""
-    known = {p.split("?")[0] for _, p in PROTECTED} | set(PUBLIC) | set(PUBLIC_AUTH_FLOW)
+    known = (
+        {p.split("?")[0] for _, p in PROTECTED}
+        | set(PUBLIC)
+        | set(PUBLIC_AUTH_FLOW)
+        | set(PUBLIC_SESSION_START)
+    )
     live = {
         r.path
         for r in app.routes
