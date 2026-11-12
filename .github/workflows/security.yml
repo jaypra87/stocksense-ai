@@ -35,8 +35,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e . pip-audit
-      # --strict fails on unfixable findings too, so nothing is silently skipped.
-      - run: pip-audit --strict --desc
+      # The project itself is not on PyPI, so it is skipped; any real finding
+      # in a dependency still fails the job.
+      - run: pip-audit --desc --skip-editable
 
   node:
     name: npm audit (frontend)

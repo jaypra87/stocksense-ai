@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 
 // Tabbed API preview for the landing hero. The request/response mirror the real
 // prediction endpoint (POST /api/v1/predictions/{ticker}) — keep them in sync
@@ -89,7 +89,7 @@ function JavaScriptPane() {
   );
 }
 
-const PANES: Record<Tab, () => JSX.Element> = {
+const PANES: Record<Tab, () => ReactElement> = {
   curl: CurlPane,
   Python: PythonPane,
   JavaScript: JavaScriptPane,
