@@ -61,6 +61,14 @@ class Settings(BaseSettings):
     # trusts the address its own platform's load balancer appends.
     proxy_shared_secret: str | None = None
 
+    # Header the hosting platform's own edge sets to the real client address
+    # for requests that reach the backend directly (not via the frontend
+    # proxy). Render sits behind Cloudflare, which overwrites
+    # `CF-Connecting-IP` on every request, so set it to that there. Leave
+    # unset anywhere a client could reach the app without such an edge in
+    # front, because then the header is just another client-supplied value.
+    trusted_client_ip_header: str | None = None
+
     # Cloudflare Turnstile (bot protection). Both unset = disabled, which is
     # logged loudly in production. The site key is public (it ships to browsers);
     # the secret key verifies tokens server-side.

@@ -12,13 +12,15 @@ forge:
 1. The frontend proxy sends `X-Proxy-Secret` plus `X-Client-IP`. Vercel
    overwrites X-Forwarded-For with the real client address before the proxy
    ever runs, so when the secret matches, that header is authoritative.
-2. Otherwise the request hit the platform directly, and the only addresses we
-   can vouch for are the ones the platform's own balancer appended. Render
-   appends the client and then its internal hop(s) (10.x), so the answer is
-   the rightmost *public* X-Forwarded-For entry. Walking from the right and
-   skipping private ranges cannot be gamed: a client can prepend whatever it
-   likes, but it cannot put anything to the right of what the balancer adds.
-3. With no proxy at all (local dev, tests) it is the socket peer.
+2. Otherwise the request hit the platform directly. If the platform's edge
+   stamps the client address into a header of its own (Render fronts every
+   service with Cloudflare, which overwrites `CF-Connecting-IP`), that header
+   is configured as `TRUSTED_CLIENT_IP_HEADER` and wins.
+3. Failing that, the only addresses we can vouch for are the ones the
+   platform's balancer appended, so take the rightmost *public*
+   X-Forwarded-For entry. A client can prepend whatever it likes, but it
+   cannot put anything to the right of what the balancer adds.
+4. With no proxy at all (local dev, tests) it is the socket peer.
 """
 
 import hmac
@@ -38,6 +40,11 @@ def client_ip(request: Request) -> str:
         proxied = request.headers.get("x-client-ip", "").strip()
         if proxied:
             return proxied
+
+    if settings.trusted_client_ip_header:
+        stamped = request.headers.get(settings.trusted_client_ip_header.lower(), "").strip()
+        if stamped:
+            return stamped
 
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:

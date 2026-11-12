@@ -162,6 +162,25 @@ def test_client_ip_skips_the_balancers_internal_hops() -> None:
     assert client_ip(_Req({"x-forwarded-for": "10.0.0.1, 10.0.0.2"})) == "10.0.0.2"
 
 
+def test_client_ip_prefers_the_platforms_own_header_when_configured(monkeypatch) -> None:
+    monkeypatch.setattr(get_settings(), "trusted_client_ip_header", "CF-Connecting-IP")
+    # Cloudflare in front of Render: XFF ends in Cloudflare's own address, but
+    # CF-Connecting-IP carries the client and cannot be set by the client.
+    req = _Req({
+        "cf-connecting-ip": "93.184.216.34",
+        "x-forwarded-for": "93.184.216.34, 172.70.34.43, 10.28.55.214",
+    })
+    assert client_ip(req) == "93.184.216.34"
+    # Without the header the chain logic still applies.
+    assert client_ip(_Req({"x-forwarded-for": "93.184.216.34, 10.28.55.214"})) == "93.184.216.34"
+    # The frontend proxy still outranks it.
+    monkeypatch.setattr(get_settings(), "proxy_shared_secret", "s3cret")
+    via_proxy = _Req(
+        {"x-proxy-secret": "s3cret", "x-client-ip": "1.1.1.1", "cf-connecting-ip": "2.2.2.2"}
+    )
+    assert client_ip(via_proxy) == "1.1.1.1"
+
+
 # --- deep health reports whether the proxy secret matched -------------------
 
 

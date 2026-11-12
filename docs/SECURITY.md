@@ -88,9 +88,12 @@ is unreachable an in-process window takes over rather than failing open.
 **Client IP.** The trusted source, in order: `X-Client-IP` from the frontend
 proxy when its `X-Proxy-Secret` matches (Vercel overwrites `X-Forwarded-For`
 with the real address before the proxy runs, so it cannot be forged); otherwise
-the *rightmost* `X-Forwarded-For` entry, which the platform's own load balancer
-appended; otherwise the socket peer. The leftmost entry is never used — it is
-whatever the client typed.
+the header named by `TRUSTED_CLIENT_IP_HEADER`, which the platform's own edge
+stamps (`CF-Connecting-IP` on Render, where Cloudflare fronts every service);
+otherwise the rightmost *public* `X-Forwarded-For` entry, skipping the
+private hops the balancer appends after the client; otherwise the socket peer.
+The leftmost entry is never used — it is whatever the client typed.
+`/health/deep` returns `proxy` and `client` so this can be checked from outside.
 
 ## Data protection
 
