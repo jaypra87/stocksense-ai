@@ -154,5 +154,8 @@ def test_deep_health_reports_proxy_trust(client: TestClient, monkeypatch) -> Non
     assert client.get("/api/v1/health/deep").json()["proxy"] == "direct"
     wrong = client.get("/api/v1/health/deep", headers={"X-Proxy-Secret": "nope"})
     assert wrong.json()["proxy"] == "direct"
-    right = client.get("/api/v1/health/deep", headers={"X-Proxy-Secret": "s3cret"})
+    right = client.get(
+        "/api/v1/health/deep", headers={"X-Proxy-Secret": "s3cret", "X-Client-IP": "198.51.100.7"}
+    )
     assert right.json()["proxy"] == "trusted"
+    assert right.json()["client"] == "198.51.100.7"

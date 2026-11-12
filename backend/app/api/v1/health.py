@@ -6,7 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.cache.redis_client import get_redis
-from app.core.client_ip import via_trusted_proxy
+from app.core.client_ip import client_ip, via_trusted_proxy
 from app.db.session import get_db
 
 router = APIRouter(tags=["health"])
@@ -37,9 +37,13 @@ def health_deep(
     `proxy` says whether this request arrived with a valid proxy secret. Called
     through the frontend it must be "trusted"; "direct" there means the secret
     on the frontend and the backend differ, and every visitor is then sharing
-    one rate-limit bucket.
+    one rate-limit bucket. `client` is the address the limiter would charge
+    for this request: the caller's own IP, so nothing is disclosed.
     """
-    components: dict[str, str] = {"proxy": "trusted" if via_trusted_proxy(request) else "direct"}
+    components: dict[str, str] = {
+        "proxy": "trusted" if via_trusted_proxy(request) else "direct",
+        "client": client_ip(request),
+    }
 
     try:
         db.execute(text("SELECT 1"))

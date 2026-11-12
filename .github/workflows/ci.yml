@@ -26,7 +26,8 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql+psycopg://stocksense:stocksense@localhost:5432/stocksense
+      # `app` is an ordinary role created below; see the psql step.
+      DATABASE_URL: postgresql+psycopg://app:app@localhost:5432/stocksense
       # Tests use an in-memory stand-in; this just keeps the client from
       # waiting on a real host.
       REDIS_URL: redis://localhost:6379/0
@@ -44,10 +45,15 @@ jobs:
       - run: ruff check app tests
       # The postgres image makes POSTGRES_USER a superuser, and superusers
       # bypass row-level security entirely, so the RLS tests would pass for
-      # the wrong reason. Demote the role to match production, where the app
-      # connects as an ordinary owner. Alembic and pytest open fresh
-      # connections afterwards and pick the change up.
-      - run: psql postgresql://stocksense:stocksense@localhost:5432/stocksense -c "ALTER ROLE stocksense NOSUPERUSER NOBYPASSRLS"
+      # the wrong reason (and Postgres 16 refuses to demote its bootstrap
+      # user). Migrations and tests therefore run as `app`, an ordinary role
+      # that owns the tables it creates, which is how production connects.
+      - run: |
+          psql postgresql://stocksense:stocksense@localhost:5432/stocksense <<'SQL'
+          CREATE ROLE app LOGIN PASSWORD 'app' NOSUPERUSER NOBYPASSRLS;
+          GRANT ALL ON DATABASE stocksense TO app;
+          GRANT ALL ON SCHEMA public TO app;
+          SQL
       - run: alembic upgrade head
       - run: pytest -q
 
