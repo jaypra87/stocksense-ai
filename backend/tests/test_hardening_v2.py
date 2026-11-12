@@ -143,3 +143,16 @@ def test_signup_is_gated_by_turnstile_when_configured(client: TestClient, monkey
     )
     assert resp.status_code == 403
     assert resp.json()["detail"]["challenge"] == "turnstile"
+
+
+# --- deep health reports whether the proxy secret matched -------------------
+
+
+def test_deep_health_reports_proxy_trust(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(get_settings(), "proxy_shared_secret", "s3cret")
+
+    assert client.get("/api/v1/health/deep").json()["proxy"] == "direct"
+    wrong = client.get("/api/v1/health/deep", headers={"X-Proxy-Secret": "nope"})
+    assert wrong.json()["proxy"] == "direct"
+    right = client.get("/api/v1/health/deep", headers={"X-Proxy-Secret": "s3cret"})
+    assert right.json()["proxy"] == "trusted"
