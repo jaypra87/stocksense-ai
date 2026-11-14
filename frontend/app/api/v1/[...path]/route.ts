@@ -39,8 +39,9 @@ const HOP_BY_HOP = new Set([
   "content-encoding", // fetch() already decoded the body
 ]);
 
-async function proxy(req: NextRequest, { params }: { params: { path: string[] } }) {
-  const target = new URL(`/api/v1/${params.path.join("/")}`, BACKEND_URL);
+async function proxy(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const { path } = await params;
+  const target = new URL(`/api/v1/${path.join("/")}`, BACKEND_URL);
   target.search = req.nextUrl.search;
 
   const headers = new Headers();
@@ -51,7 +52,8 @@ async function proxy(req: NextRequest, { params }: { params: { path: string[] } 
     headers.set(key, value);
   });
 
-  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.ip ?? "";
+  const clientIp =
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? "";
   if (clientIp) headers.set("x-client-ip", clientIp);
   if (PROXY_SECRET) headers.set("x-proxy-secret", PROXY_SECRET);
 

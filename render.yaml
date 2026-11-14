@@ -32,6 +32,9 @@ services:
       - key: PROXY_SHARED_SECRET
         sync: false          # same value as API_PROXY_SECRET on Vercel; lets the backend trust the
                              # client IP the frontend proxy reports (`openssl rand -hex 32`)
+      - key: TRUSTED_CLIENT_IP_HEADER
+        value: CF-Connecting-IP   # Render fronts services with Cloudflare, which stamps the real
+                                  # client address here; X-Forwarded-For ends in Cloudflare's own IP
       - key: TURNSTILE_SECRET_KEY
         sync: false          # Cloudflare Turnstile secret key (bot protection). Optional but
                              # strongly recommended: without it no challenge is ever issued.

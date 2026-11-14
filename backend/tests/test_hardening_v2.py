@@ -40,8 +40,10 @@ class _Req:
 
 
 def test_client_ip_ignores_the_spoofable_leftmost_forwarded_entry() -> None:
-    req = _Req({"x-forwarded-for": "1.1.1.1, 203.0.113.7"})
-    assert client_ip(req) == "203.0.113.7"
+    # (Routable addresses: Python treats the RFC 5737 documentation ranges
+    # as private, and the resolver skips private hops on purpose.)
+    req = _Req({"x-forwarded-for": "1.1.1.1, 93.184.216.34"})
+    assert client_ip(req) == "93.184.216.34"
 
 
 def test_client_ip_trusts_the_proxy_header_only_with_the_secret(monkeypatch) -> None:
@@ -143,3 +145,53 @@ def test_signup_is_gated_by_turnstile_when_configured(client: TestClient, monkey
     )
     assert resp.status_code == 403
     assert resp.json()["detail"]["challenge"] == "turnstile"
+
+
+# --- forwarded chain: rightmost public entry wins ---------------------------
+
+
+def test_client_ip_skips_the_balancers_internal_hops() -> None:
+    # Render appends the client, then its own 10.x hop.
+    assert client_ip(_Req({"x-forwarded-for": "93.184.216.34, 10.28.55.214"})) == "93.184.216.34"
+    # A spoofed leftmost entry never wins over what the balancer appended.
+    chain = "1.1.1.1, 93.184.216.34, 10.28.55.214"
+    assert client_ip(_Req({"x-forwarded-for": chain})) == "93.184.216.34"
+    # Garbage is skipped, not trusted.
+    assert client_ip(_Req({"x-forwarded-for": "93.184.216.34, not-an-ip"})) == "93.184.216.34"
+    # With nothing public in the chain, fall back to the last hop.
+    assert client_ip(_Req({"x-forwarded-for": "10.0.0.1, 10.0.0.2"})) == "10.0.0.2"
+
+
+def test_client_ip_prefers_the_platforms_own_header_when_configured(monkeypatch) -> None:
+    monkeypatch.setattr(get_settings(), "trusted_client_ip_header", "CF-Connecting-IP")
+    # Cloudflare in front of Render: XFF ends in Cloudflare's own address, but
+    # CF-Connecting-IP carries the client and cannot be set by the client.
+    req = _Req({
+        "cf-connecting-ip": "93.184.216.34",
+        "x-forwarded-for": "93.184.216.34, 172.70.34.43, 10.28.55.214",
+    })
+    assert client_ip(req) == "93.184.216.34"
+    # Without the header the chain logic still applies.
+    assert client_ip(_Req({"x-forwarded-for": "93.184.216.34, 10.28.55.214"})) == "93.184.216.34"
+    # The frontend proxy still outranks it.
+    monkeypatch.setattr(get_settings(), "proxy_shared_secret", "s3cret")
+    via_proxy = _Req(
+        {"x-proxy-secret": "s3cret", "x-client-ip": "1.1.1.1", "cf-connecting-ip": "2.2.2.2"}
+    )
+    assert client_ip(via_proxy) == "1.1.1.1"
+
+
+# --- deep health reports whether the proxy secret matched -------------------
+
+
+def test_deep_health_reports_proxy_trust(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(get_settings(), "proxy_shared_secret", "s3cret")
+
+    assert client.get("/api/v1/health/deep").json()["proxy"] == "direct"
+    wrong = client.get("/api/v1/health/deep", headers={"X-Proxy-Secret": "nope"})
+    assert wrong.json()["proxy"] == "direct"
+    right = client.get(
+        "/api/v1/health/deep", headers={"X-Proxy-Secret": "s3cret", "X-Client-IP": "198.51.100.7"}
+    )
+    assert right.json()["proxy"] == "trusted"
+    assert right.json()["client"] == "198.51.100.7"

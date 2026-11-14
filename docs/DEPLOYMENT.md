@@ -39,6 +39,10 @@ runs migrations → binds the port → bootstraps a demo user + trained model
      Vercel as `API_PROXY_SECRET` (step 4).
    - `TURNSTILE_SECRET_KEY` → from Cloudflare (step 6). Optional; without it bot
      protection is off and the log says so.
+   - `TRUSTED_CLIENT_IP_HEADER` → `CF-Connecting-IP`. Render fronts every
+     service with Cloudflare, which stamps the real client address into that
+     header; without it, requests that bypass the frontend proxy are all
+     charged to Cloudflare's own address, so they share one rate-limit bucket.
    - (`JWT_SECRET` is auto-generated; `MARKET_DATA_PROVIDER`, `BCRYPT_ROUNDS` and
      `ENVIRONMENT=production` are preset.)
 3. Deploy. Health check: `/api/v1/health`.
@@ -56,8 +60,14 @@ runs migrations → binds the port → bootstraps a demo user + trained model
 `200`, so a broken one is visible instead of hidden behind a generic error:
 
 ```json
-{"status": "degraded", "postgres": "ok", "redis": "unavailable"}
+{"status": "degraded", "proxy": "direct", "postgres": "ok", "redis": "unavailable"}
 ```
+
+`proxy` tells you whether the request carried a valid proxy secret. Fetched
+through the frontend (`https://<your-vercel-app>/api/v1/health/deep`) it must
+say `trusted`. If it says `direct` there, `API_PROXY_SECRET` on Vercel and
+`PROXY_SHARED_SECRET` on Render differ, and the backend is attributing every
+visitor to Vercel's outbound address, so they all share one rate-limit bucket.
 
 - **`redis: unavailable`** — usually `REDIS_URL` unset or pointed at an expired
   free-tier instance. The app stays correct without it (the cache fails open),
@@ -154,6 +164,8 @@ docker compose up --build
 - [ ] `PROXY_SHARED_SECRET` (Render) equals `API_PROXY_SECRET` (Vercel).
 - [ ] `CORS_ORIGINS` is restricted to the real Vercel origin.
 - [ ] Neon + Upstash URLs set; `/api/v1/health/deep` reports both `ok`.
+- [ ] `/api/v1/health/deep` fetched via the Vercel URL reports `"proxy": "trusted"`.
+- [ ] `/api/v1/health/deep` fetched directly on Render reports your own address as `client`, not a 172.x or 10.x one.
 - [ ] Migrations applied on boot (`start.sh`); a model trained (`bootstrap.py`).
 - [ ] `BACKEND_URL` on Vercel points at the Render service root (no `/api/v1`).
 - [ ] Turnstile keys set on both sides (`TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`).

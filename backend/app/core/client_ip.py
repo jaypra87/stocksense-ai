@@ -12,13 +12,19 @@ forge:
 1. The frontend proxy sends `X-Proxy-Secret` plus `X-Client-IP`. Vercel
    overwrites X-Forwarded-For with the real client address before the proxy
    ever runs, so when the secret matches, that header is authoritative.
-2. Otherwise the request hit the platform directly, and the only address we
-   can vouch for is the one the platform's own balancer appended: the
-   rightmost X-Forwarded-For entry.
-3. With no proxy at all (local dev, tests) it is the socket peer.
+2. Otherwise the request hit the platform directly. If the platform's edge
+   stamps the client address into a header of its own (Render fronts every
+   service with Cloudflare, which overwrites `CF-Connecting-IP`), that header
+   is configured as `TRUSTED_CLIENT_IP_HEADER` and wins.
+3. Failing that, the only addresses we can vouch for are the ones the
+   platform's balancer appended, so take the rightmost *public*
+   X-Forwarded-For entry. A client can prepend whatever it likes, but it
+   cannot put anything to the right of what the balancer adds.
+4. With no proxy at all (local dev, tests) it is the socket peer.
 """
 
 import hmac
+import ipaddress
 
 from fastapi import Request
 
@@ -35,11 +41,31 @@ def client_ip(request: Request) -> str:
         if proxied:
             return proxied
 
+    if settings.trusted_client_ip_header:
+        stamped = request.headers.get(settings.trusted_client_ip_header.lower(), "").strip()
+        if stamped:
+            return stamped
+
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[-1].strip()
+        hops = [h.strip() for h in forwarded.split(",") if h.strip()]
+        for hop in reversed(hops):
+            if not _is_internal(hop):
+                return hop
+        if hops:
+            return hops[-1]
 
     return request.client.host if request.client else "unknown"
+
+
+def _is_internal(addr: str) -> bool:
+    """Private, loopback and link-local ranges: a load balancer's own hops.
+    Anything unparsable is treated as internal so it is skipped, never trusted."""
+    try:
+        ip = ipaddress.ip_address(addr)
+    except ValueError:
+        return True
+    return ip.is_private or ip.is_loopback or ip.is_link_local
 
 
 def via_trusted_proxy(request: Request) -> bool:
