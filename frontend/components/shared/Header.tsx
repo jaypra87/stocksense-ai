@@ -36,7 +36,8 @@ export function Header() {
       </a>
 
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
-        <Logo href="/dashboard" className="[&>span:last-child]:hidden sm:[&>span:last-child]:inline" />
+        {/* The logo is the way back to the landing page from inside the app. */}
+        <Logo className="[&>span:last-child]:hidden sm:[&>span:last-child]:inline" />
 
         <div className="flex flex-1 justify-center">
           <SearchBar />

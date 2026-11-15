@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Logo } from "@/components/shared/Logo";
 
 const LINKS = [
+  { href: "/", label: "Home" },
   { href: "/transparency", label: "How the models work" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/compare", label: "Compare" },
