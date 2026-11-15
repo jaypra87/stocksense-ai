@@ -1,6 +1,16 @@
 "use client";
 
-import { Bell, GitCompare, LogOut, Menu, Settings, Star, UserPlus, X } from "lucide-react";
+import {
+  Bell,
+  GitCompare,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Settings,
+  Star,
+  UserPlus,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -12,6 +22,7 @@ import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 const NAV = [
+  { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/watchlist", label: "Watchlist", Icon: Star },
   { href: "/compare", label: "Compare", Icon: GitCompare },
   { href: "/alerts", label: "Alerts", Icon: Bell },

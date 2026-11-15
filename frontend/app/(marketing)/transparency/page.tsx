@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Database, Layers, ListChecks } from "lucide-react";
 
+import { BackToDashboard } from "@/components/shared/BackToDashboard";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -37,6 +38,7 @@ export default function TransparencyPage() {
 
   return (
     <div className="space-y-6">
+      <BackToDashboard />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Model transparency</h1>
         <p className="mt-1 text-muted-foreground">

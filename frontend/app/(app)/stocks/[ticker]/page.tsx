@@ -10,6 +10,7 @@ import { RSIChart } from "@/components/indicators/RSIChart";
 import { PredictionPanel } from "@/components/prediction/PredictionPanel";
 import { RiskPanel } from "@/components/risk/RiskPanel";
 import { SentimentPanel } from "@/components/sentiment/SentimentPanel";
+import { BackToDashboard } from "@/components/shared/BackToDashboard";
 import { Reveal } from "@/components/shared/Reveal";
 import { TickerLogo } from "@/components/shared/TickerLogo";
 import { KeyStats } from "@/components/stock/KeyStats";
@@ -42,22 +43,26 @@ export default function StockPage() {
 
   if (nothingLoaded) {
     return (
-      <Card className="flex items-center gap-3 border-bearish/40" role="alert">
-        <AlertCircle className="h-5 w-5 shrink-0 text-bearish" aria-hidden />
-        <div>
-          <p className="font-semibold">Couldn&apos;t load {ticker}</p>
-          <p className="text-sm text-muted-foreground">
-            The ticker may be invalid, or the data provider is unavailable. Try another symbol.
-          </p>
-        </div>
-      </Card>
+      <div className="space-y-4">
+        <BackToDashboard />
+        <Card className="flex items-center gap-3 border-bearish/40" role="alert">
+          <AlertCircle className="h-5 w-5 shrink-0 text-bearish" aria-hidden />
+          <div>
+            <p className="font-semibold">Couldn&apos;t load {ticker}</p>
+            <p className="text-sm text-muted-foreground">
+              The ticker may be invalid, or the data provider is unavailable. Try another symbol.
+            </p>
+          </div>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      <BackToDashboard />
       {/* Header row: ticker + watchlist toggle */}
-      <div className="flex animate-fade-up items-center justify-between gap-3">
+      <div className="animate-fade-up flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <TickerLogo ticker={ticker} size="lg" />
           <div>
@@ -81,8 +86,8 @@ export default function StockPage() {
                 <div>
                   <p className="font-semibold">Live price unavailable</p>
                   <p className="text-sm text-muted-foreground">
-                    The quote feed didn&apos;t respond. The chart and analysis below are still
-                    up to date.
+                    The quote feed didn&apos;t respond. The chart and analysis below are still up to
+                    date.
                   </p>
                 </div>
               </Card>
