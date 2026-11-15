@@ -17,7 +17,7 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { CodeTerminal } from "@/components/marketing/CodeTerminal";
+import { ForecastPreview } from "@/components/marketing/ForecastPreview";
 import { Reveal } from "@/components/shared/Reveal";
 import { ScrollBackground } from "@/components/marketing/ScrollBackground";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/site";
@@ -27,10 +27,6 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   alternates: { canonical: "/" },
 };
-
-// This page is rendered on the server, so it can read the backend origin the
-// proxy uses. The OpenAPI page there is public.
-const API_DOCS_URL = `${process.env.BACKEND_URL ?? "http://localhost:8000"}/docs`;
 
 const PROOF_POINTS = [
   { value: "3", label: "Forecast horizons", detail: "1, 7 and 30 days ahead" },
@@ -212,10 +208,6 @@ const FAQ = [
     q: "Where does the data come from?",
     a: "Live quotes and history come from public market data providers. News sentiment comes from classified headlines. Every source is listed on the transparency page.",
   },
-  {
-    q: "Can I build on top of it?",
-    a: "Yes. The dashboard runs on a documented REST API with interactive OpenAPI docs. Browsers authenticate with a session cookie and other clients can send a bearer token. The link is in the developers section below.",
-  },
 ];
 
 const JSON_LD = {
@@ -250,7 +242,7 @@ export default function LandingPage() {
             </h1>
             <p className="max-w-xl text-lg text-muted-foreground">
               Every forecast comes with a confidence score, an expected range, the factors behind
-              it and a backtest you can run yourself. Use the dashboard or make one REST call.
+              it and a backtest you can run yourself.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <Link
@@ -275,10 +267,9 @@ export default function LandingPage() {
               wrong, and the app tells you when.
             </p>
           </div>
-          {/* min-w-0 lets the code panel scroll on narrow screens instead of
-              widening the whole page to fit its longest line. */}
+          {/* min-w-0 keeps the card from widening the page on narrow screens. */}
           <div className="min-w-0 animate-fade-up [animation-delay:150ms]">
-            <CodeTerminal />
+            <ForecastPreview />
           </div>
         </div>
       </section>
@@ -587,43 +578,6 @@ export default function LandingPage() {
               </Reveal>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Developers */}
-      <section aria-labelledby="developers-heading" id="developers" className="scroll-mt-20 bg-[#0b1120]">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
-          <Reveal className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Developers
-            </p>
-            <h2 id="developers-heading" className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Documentation you can run.
-            </h2>
-            <p className="mt-3 text-slate-400">
-              The API reference is interactive OpenAPI, so you can try every endpoint from the
-              browser. The transparency report covers the models: features, data sources, training
-              method and where they fail.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a
-                href={API_DOCS_URL}
-                className="group inline-flex h-11 items-center gap-2 rounded-md bg-white px-6 font-semibold text-slate-900 transition-colors hover:bg-slate-200"
-              >
-                Open the API reference
-                <ArrowRight
-                  className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-                  aria-hidden
-                />
-              </a>
-              <Link
-                href="/transparency"
-                className="inline-flex h-11 items-center rounded-md border border-slate-700 px-6 font-semibold text-white transition-colors hover:border-slate-500"
-              >
-                Model transparency report
-              </Link>
-            </div>
-          </Reveal>
         </div>
       </section>
 

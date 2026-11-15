@@ -31,9 +31,9 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             </Link>
             <Link
               href="/transparency"
-              className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:block"
+              className="hidden whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:block"
             >
-              Docs
+              How it works
             </Link>
             <Link
               href="/login"
