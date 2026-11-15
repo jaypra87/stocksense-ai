@@ -14,6 +14,10 @@ import { cn } from "@/lib/utils";
 //
 // Timings are shared between the CSS keyframes on the SVG and the typing
 // timer here: the line finishes drawing at ~1.2s, typing starts then.
+//
+// The sequence replays whenever the panel comes back into view after the
+// visitor has scrolled away: `run` bumps, which remounts the animated
+// subtree (restarting the CSS animations) and restarts the typing timers.
 
 const NAME = "StockSense";
 const SUFFIX = "AI";
@@ -25,14 +29,27 @@ export function IntroSplash() {
   const ref = useRef<HTMLElement>(null);
   const [typed, setTyped] = useState(0);
   const [done, setDone] = useState(false);
+  const [run, setRun] = useState(0);
+  const wasOut = useRef(false);
 
-  // Header hand-off.
+  // Header hand-off, and replay when the panel returns.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const root = document.documentElement;
     const observer = new IntersectionObserver(
-      ([entry]) => root.toggleAttribute("data-intro", entry.intersectionRatio > 0.5),
+      ([entry]) => {
+        const inView = entry.intersectionRatio > 0.5;
+        root.toggleAttribute("data-intro", inView);
+        if (inView && wasOut.current) {
+          wasOut.current = false;
+          setTyped(0);
+          setDone(false);
+          setRun((n) => n + 1);
+        } else if (!inView) {
+          wasOut.current = true;
+        }
+      },
       { threshold: [0.5] },
     );
     observer.observe(el);
@@ -56,7 +73,7 @@ export function IntroSplash() {
     // Keep the caret blinking briefly after the last letter, then drop it.
     timers.push(setTimeout(() => setDone(true), TYPING_START_MS + FULL.length * TYPING_STEP_MS + 900));
     return () => timers.forEach(clearTimeout);
-  }, []);
+  }, [run]);
 
   function scrollOn() {
     document.getElementById("hero")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -73,7 +90,7 @@ export function IntroSplash() {
       aria-label="Welcome"
       className="intro-panel relative flex flex-col items-center justify-center border-b border-border px-4"
     >
-      <div className="flex flex-col items-center gap-8 sm:gap-10">
+      <div key={run} className="flex flex-col items-center gap-8 sm:gap-10">
         <span className="intro-tile flex h-32 w-32 items-center justify-center rounded-[2rem] bg-accent/15 sm:h-40 sm:w-40 lg:h-48 lg:w-48">
           <svg viewBox="0 0 32 32" className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28" aria-hidden>
             <path

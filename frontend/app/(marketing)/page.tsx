@@ -282,19 +282,13 @@ export default function LandingPage() {
           of line with their neighbours. */}
       <section aria-labelledby="glance-heading" className="border-b border-border bg-card/40">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
-          <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                At a glance
-              </p>
-              <h2 id="glance-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-                The numbers behind every forecast.
-              </h2>
-            </div>
-            <p className="max-w-md text-sm text-muted-foreground">
-              None of these are marketing figures. Each one is a constant in the codebase, and the
-              sections below show where it comes from.
+          <Reveal className="mb-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              At a glance
             </p>
+            <h2 id="glance-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+              The numbers behind every forecast.
+            </h2>
           </Reveal>
           <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-card md:grid-cols-3">
             {PROOF_POINTS.map(({ value, label, detail }, i) => (
@@ -431,9 +425,7 @@ export default function LandingPage() {
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 {title}
               </h3>
-              <p className="mt-3 overflow-x-auto rounded-md bg-[#0b1120] px-4 py-3 font-mono text-sm text-slate-200">
-                {body}
-              </p>
+              <p className="mt-3 overflow-x-auto py-1 font-mono text-base">{body}</p>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{caption}</p>
             </Reveal>
           ))}
