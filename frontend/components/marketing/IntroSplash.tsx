@@ -73,9 +73,9 @@ export function IntroSplash() {
       aria-label="Welcome"
       className="intro-panel relative flex flex-col items-center justify-center border-b border-border px-4"
     >
-      <div className="flex flex-col items-center gap-6">
-        <span className="intro-tile flex h-24 w-24 items-center justify-center rounded-3xl bg-accent/15 sm:h-28 sm:w-28">
-          <svg viewBox="0 0 32 32" className="h-14 w-14 sm:h-16 sm:w-16" aria-hidden>
+      <div className="flex flex-col items-center gap-8 sm:gap-10">
+        <span className="intro-tile flex h-32 w-32 items-center justify-center rounded-[2rem] bg-accent/15 sm:h-40 sm:w-40 lg:h-48 lg:w-48">
+          <svg viewBox="0 0 32 32" className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28" aria-hidden>
             <path
               d="M6 22 L12 15 L16 18 L26 8"
               pathLength={1}
@@ -101,7 +101,7 @@ export function IntroSplash() {
 
         {/* The full name is always in the DOM for assistive tech and crawlers;
             the visible copy is the typed portion plus a caret. */}
-        <p className="text-4xl font-bold tracking-tight sm:text-5xl">
+        <p className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
           <span className="sr-only">{FULL}</span>
           <span aria-hidden className="whitespace-pre">
             {namePart}
