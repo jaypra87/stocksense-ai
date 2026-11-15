@@ -1,13 +1,13 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      // Private, auth-gated areas — nothing useful for crawlers.
+      // Private, auth-gated areas. Nothing useful for crawlers.
       disallow: ["/dashboard", "/watchlist", "/compare", "/alerts", "/settings", "/stocks/"],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,

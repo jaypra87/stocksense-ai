@@ -91,7 +91,7 @@ def uncertainty_note(confidence: float, class_probs: dict, volatility: float | N
     margin = sorted_p[0] - sorted_p[1] if len(sorted_p) > 1 else sorted_p[0]
 
     if confidence < 0.45 or margin < 0.1:
-        base = "The model is highly uncertain — outcomes are nearly evenly split."
+        base = "The model is highly uncertain. The outcomes are nearly evenly split."
     elif confidence < 0.6:
         base = "Moderate confidence; other outcomes remain meaningfully likely."
     else:

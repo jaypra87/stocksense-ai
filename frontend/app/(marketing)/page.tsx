@@ -20,21 +20,23 @@ import Link from "next/link";
 import { CodeTerminal } from "@/components/marketing/CodeTerminal";
 import { Reveal } from "@/components/shared/Reveal";
 import { ScrollBackground } from "@/components/marketing/ScrollBackground";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { absolute: "StockSense AI — Interpretable stock analytics, not black-box predictions" },
-  description:
-    "Every forecast comes with a confidence score, an expected range, a plain-English explanation, a transparent risk breakdown, and honest backtests. Educational only.",
+  title: { absolute: `${SITE_NAME}: ${SITE_TAGLINE}` },
+  description: SITE_DESCRIPTION,
   alternates: { canonical: "/" },
 };
 
-const API_DOCS_URL = `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/docs`;
+// This page is rendered on the server, so it can read the backend origin the
+// proxy uses. The OpenAPI page there is public.
+const API_DOCS_URL = `${process.env.BACKEND_URL ?? "http://localhost:8000"}/docs`;
 
 const PROOF_POINTS = [
-  { value: "3", label: "Forecast horizons — 1d, 7d, 30d" },
-  { value: "17", label: "Model inputs, every one listed below" },
-  { value: "6", label: "Risk factors, every weight shown" },
-  { value: "0", label: "Forecasts shipped without a confidence score" },
+  { value: "3", label: "Forecast horizons: 1, 7 and 30 days" },
+  { value: "17", label: "Model inputs, all listed on this page" },
+  { value: "6", label: "Risk factors, each with its weight shown" },
+  { value: "0", label: "Forecasts published without a confidence score" },
 ];
 
 const STEPS = [
@@ -43,57 +45,57 @@ const STEPS = [
     step: "1",
     title: "Search any ticker",
     description:
-      "Autocomplete with exchange-suffix support — AAPL, BRK-B, VFV.TO — backed by live quotes and up to five years of history.",
+      "Autocomplete handles exchange suffixes such as BRK-B and VFV.TO. Quotes are live and history goes back up to five years.",
   },
   {
     Icon: LineChart,
     step: "2",
     title: "Read the full picture",
     description:
-      "Price history, technical indicators, a forecast with its confidence and reasoning, risk factors, and news sentiment on one page.",
+      "Price history, technical indicators, the forecast with its confidence and reasoning, risk factors and news sentiment, all on one page.",
   },
   {
     Icon: FlaskConical,
     step: "3",
-    title: "Verify before you trust",
+    title: "Check it before you trust it",
     description:
-      "Run a walk-forward backtest on that exact ticker and see the model's real hit rate against naive baselines — losses included.",
+      "Run a walk-forward backtest on that ticker and see how often the model was right compared with naive baselines. The losing runs are shown too.",
   },
 ];
 
 const FEATURES = [
   {
     Icon: CandlestickChart,
-    title: "Live quotes & charts",
-    description: "Real-time quotes with 1D–5Y history, volume overlays, and persistent candles.",
+    title: "Live quotes and charts",
+    description: "Live quotes with up to five years of history, volume overlays and saved candles.",
   },
   {
     Icon: BrainCircuit,
     title: "Forecasts with confidence",
     description:
-      "Never a bare buy/sell signal. Every call ships its probability, expected range, and reasoning.",
+      "No bare buy or sell signals. Each forecast includes its probability, its expected range and the reasons behind it.",
   },
   {
     Icon: ShieldAlert,
     title: "Transparent risk scoring",
     description:
-      "A 0–100 composite from volatility, drawdown, volume, trend, model uncertainty, and sentiment.",
+      "A composite score from 0 to 100 built from volatility, drawdown, volume, trend, model uncertainty and news sentiment.",
   },
   {
     Icon: Newspaper,
     title: "News sentiment",
-    description: "Recent headlines classified and summarized, then fed back into the risk engine.",
+    description: "Recent headlines are classified and summarised, then fed into the risk score.",
   },
   {
     Icon: Bell,
-    title: "Watchlists & alerts",
-    description: "Save tickers, set alert rules, and review the full triggered history.",
+    title: "Watchlists and alerts",
+    description: "Save tickers, set alert rules and review everything that has triggered.",
   },
   {
     Icon: FlaskConical,
-    title: "Honest backtesting",
+    title: "Backtesting",
     description:
-      "Walk-forward, no-lookahead backtests against naive baselines — including when the model loses.",
+      "Walk-forward backtests with no lookahead, measured against naive baselines. You see the losing runs as well as the winning ones.",
   },
 ];
 
@@ -106,13 +108,13 @@ const FORMULAS = [
       </>
     ),
     caption:
-      "The target is the forward return over the horizon. Bullish if r clears a per-horizon threshold (+0.5% for 1d, +2% for 7d, +4% for 30d), bearish below the negative threshold, neutral between.",
+      "The target is the forward return over the horizon. A move above the threshold for that horizon (0.5% for 1 day, 2% for 7 days, 4% for 30 days) is labelled bullish, a move below the negative threshold bearish, and anything in between neutral.",
   },
   {
     title: "Confidence",
     body: <>confidence = max<sub>c</sub> p̂(c | x)</>,
     caption:
-      "The share of the forest's 200 trees voting for the winning class. 0.63 means 126 trees agreed — and 74 didn't. It's shown on every forecast because it's part of the answer.",
+      "The share of the forest's 200 trees that voted for the winning class. A confidence of 0.63 means 126 trees agreed and 74 did not. It appears on every forecast because it is part of the answer.",
   },
   {
     title: "Expected range",
@@ -122,7 +124,7 @@ const FORMULAS = [
       </>
     ),
     caption:
-      "The regressor's point estimate widened by the spread of per-tree predictions. When the trees disagree, the band gets wider — uncertainty is displayed, not averaged away.",
+      "The regressor's point estimate, widened by the spread of the individual tree predictions. When the trees disagree the band gets wider. Uncertainty is shown rather than averaged away.",
   },
   {
     title: "Risk score",
@@ -132,7 +134,7 @@ const FORMULAS = [
       </>
     ),
     caption:
-      "A weighted blend of six 0–100 sub-scores. If a factor is unavailable, the weights renormalize over what's left — the score never silently fills gaps with guesses.",
+      "A weighted blend of six sub-scores, each from 0 to 100. If a factor is unavailable the remaining weights are renormalised, so the score never fills a gap with a guess.",
   },
 ];
 
@@ -154,10 +156,10 @@ const FEATURE_GROUPS = [
   {
     title: "Oscillators",
     count: 4,
-    items: "RSI-14, MACD and MACD histogram (normalized by price), Bollinger-band position",
+    items: "RSI-14, MACD and MACD histogram (normalised by price), Bollinger band position",
   },
   {
-    title: "Risk & volume",
+    title: "Risk and volume",
     count: 3,
     items: "30-day volatility, drawdown from the rolling high, volume vs its own average",
   },
@@ -172,45 +174,45 @@ const VALIDATION_POINTS = [
   {
     title: "Chronological splits, never shuffled",
     description:
-      "Each ticker's history is split 80/20 in time order. The model is always graded on data newer than anything it trained on — the only split that mimics real use.",
+      "Each ticker's history is split 80/20 in time order, so the model is always graded on data newer than anything it trained on. That is the only split that resembles real use.",
   },
   {
     title: "Walk-forward backtesting",
     description:
-      "Forecast origins step forward by the horizon length so forward returns never overlap, and the model is retrained on an expanding window as it walks — no peeking at the future, ever.",
+      "Forecast origins step forward by the horizon length so forward returns never overlap, and the model is retrained on an expanding window as it goes. It never sees the future.",
   },
   {
     title: "Two baselines to beat",
     description:
-      "Every run is compared against always guessing the most common class, and against predicting zero return. A model that can't beat those isn't a model — and when it can't, the app says so.",
+      "Every run is compared with always guessing the most common class and with predicting a zero return. When the model cannot beat those, the app says so.",
   },
   {
     title: "No headline accuracy number",
     description:
-      "Accuracy genuinely varies by ticker, horizon, and market regime. Quoting one big number here would be marketing, not measurement — run the backtest on your ticker and get the real one.",
+      "Accuracy varies by ticker, horizon and market regime. A single big number here would be marketing. Run the backtest on your ticker and get the real one.",
   },
 ];
 
 const FAQ = [
   {
     q: "Is this financial advice?",
-    a: "No. StockSense is an educational analytics project. Forecasts are probabilistic, frequently wrong, and every response says so — the disclaimer is part of the API contract, not fine print.",
+    a: "No. StockSense is an educational analytics project. Forecasts are probabilistic and often wrong, and every API response carries a disclaimer saying so.",
   },
   {
     q: "Which algorithm powers the forecasts?",
-    a: "Two random forests per horizon: a classifier that votes on direction (its vote share is the confidence score) and a regressor that estimates the return, with the spread across trees setting the price range. Details, hyperparameters, and the math are on this page and the transparency report.",
+    a: "Two random forests per horizon. A classifier votes on direction, and its vote share is the confidence score. A regressor estimates the return, and the spread across its trees sets the price range. The details and the maths are on this page and in the transparency report.",
   },
   {
     q: "How accurate are the forecasts?",
-    a: "It depends on the ticker and regime, and we'd rather show you than claim a number: run a walk-forward backtest on any stock and see the model's real hit rate against naive baselines, losses included.",
+    a: "It depends on the ticker and the market regime, so rather than quote a number we let you measure it. Run a walk-forward backtest on any stock and see the hit rate against naive baselines, losses included.",
   },
   {
     q: "Where does the data come from?",
-    a: "Live quotes and history come from public market-data providers, news sentiment from classified headlines. Every data source is listed on the transparency page.",
+    a: "Live quotes and history come from public market data providers. News sentiment comes from classified headlines. Every source is listed on the transparency page.",
   },
   {
     q: "Can I build on top of it?",
-    a: "Yes — the dashboard is backed by a documented REST API with interactive OpenAPI docs, using standard Bearer-token auth. The link is in the developers section below.",
+    a: "Yes. The dashboard runs on a documented REST API with interactive OpenAPI docs. Browsers authenticate with a session cookie and other clients can send a bearer token. The link is in the developers section below.",
   },
 ];
 
@@ -220,7 +222,7 @@ const JSON_LD = {
   name: "StockSense AI",
   applicationCategory: "FinanceApplication",
   description:
-    "Interpretable, uncertainty-aware stock analytics: ML forecasts with confidence ranges, transparent risk scoring, news sentiment, and honest backtesting. Educational only — not financial advice.",
+    "Stock analytics with ML forecasts, confidence ranges, transparent risk scoring, news sentiment and backtesting. Educational use only, not financial advice.",
   offers: { "@type": "Offer", price: "0" },
 };
 
@@ -239,14 +241,14 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[46fr_54fr]">
           <div className="animate-fade-up space-y-6">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Market analytics, uncertainty included
+              Market analytics with the uncertainty included
             </p>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-[3.25rem] lg:leading-[1.08]">
-              Interpretable stock analytics, not black-box predictions.
+              Stock forecasts that show their work.
             </h1>
             <p className="max-w-xl text-lg text-muted-foreground">
-              Every forecast ships with a confidence score, an expected range, the factors behind
-              it, and a backtest you can run yourself. In the dashboard, or over one REST call.
+              Every forecast comes with a confidence score, an expected range, the factors behind
+              it and a backtest you can run yourself. Use the dashboard or make one REST call.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <Link
@@ -267,8 +269,8 @@ export default function LandingPage() {
               </Link>
             </div>
             <p className="text-xs text-muted-foreground">
-              Educational project — not financial advice. Forecasts are probabilistic and
-              frequently wrong; we show you when.
+              Educational project, not financial advice. Forecasts are probabilistic and often
+              wrong, and the app tells you when.
             </p>
           </div>
           <div className="animate-fade-up [animation-delay:150ms]">
@@ -296,7 +298,7 @@ export default function LandingPage() {
             How it works
           </p>
           <h2 id="steps-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-            From a ticker symbol to a verified forecast.
+            From a ticker symbol to a forecast you can check.
           </h2>
         </Reveal>
         <ol className="grid gap-6 md:grid-cols-3">
@@ -330,7 +332,7 @@ export default function LandingPage() {
               What&apos;s inside
             </p>
             <h2 id="features-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-              The data, the reasoning, and the uncertainty behind every number.
+              The data, the reasoning and the uncertainty behind every number.
             </h2>
           </Reveal>
           <div className="grid overflow-hidden rounded-lg border border-border bg-card sm:grid-cols-2 lg:grid-cols-3">
@@ -359,11 +361,11 @@ export default function LandingPage() {
             Under the hood
           </p>
           <h2 id="model-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-            The model, the math, and where it fails.
+            The model, the maths and where it fails.
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Nothing here is proprietary or hidden. This is the actual algorithm, the actual
-            formulas, and the actual validation discipline in the codebase.
+            Nothing here is hidden. These are the algorithm, the formulas and the validation
+            steps used in the codebase.
           </p>
         </Reveal>
 
@@ -375,11 +377,10 @@ export default function LandingPage() {
             </p>
             <h3 className="mt-2 text-lg font-semibold">Random-forest classifier</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              200 decision trees (depth ≤ 8, ≥ 20 samples per leaf) vote bullish, neutral, or
-              bearish. The winning class becomes the trend call, and the share of trees that voted
-              for it becomes the confidence score — so &ldquo;63% confident&rdquo; is a literal
-              vote count, not a vibe. One forest is trained per horizon on data pooled across
-              tickers.
+              200 decision trees (depth of at most 8, at least 20 samples per leaf) vote bullish,
+              neutral or bearish. The winning class becomes the trend call, and the share of trees
+              that voted for it becomes the confidence score, so 63% confident means 126 of the
+              200 trees agreed. One forest is trained per horizon on data pooled across tickers.
             </p>
           </Reveal>
           <Reveal delay={90} className="hover-lift rounded-lg border border-border bg-card p-7 hover:border-accent/40">
@@ -388,9 +389,10 @@ export default function LandingPage() {
             </p>
             <h3 className="mt-2 text-lg font-semibold">Random-forest regressor</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              A twin forest estimates the forward return itself. Its point estimate sets the middle
-              of the expected price range, and the disagreement between individual trees sets the
-              width — a calm consensus gives a tight band, a split forest gives a wide one.
+              A second forest estimates the forward return itself. Its point estimate sets the
+              middle of the expected price range, and the disagreement between individual trees
+              sets the width. A calm consensus gives a tight band and a split forest gives a wide
+              one.
             </p>
           </Reveal>
         </div>
@@ -419,8 +421,8 @@ export default function LandingPage() {
           <Reveal className="rounded-lg border border-border bg-card p-7">
             <h3 className="font-semibold">How the risk score is weighted</h3>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              The exact weights from the risk engine — they sum to 1 and renormalize when a factor
-              is unavailable.
+              These are the weights used by the risk engine. They sum to 1 and are renormalised
+              when a factor is unavailable.
             </p>
             <ul className="mt-5 space-y-3.5">
               {RISK_WEIGHTS.map(({ label, weight }) => (
@@ -444,9 +446,9 @@ export default function LandingPage() {
           <Reveal delay={90} className="rounded-lg border border-border bg-card p-7">
             <h3 className="font-semibold">17 inputs, all scale-free</h3>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Every feature is a ratio or an oscillator, never a raw price — that&apos;s what lets
-              one global model learn across tickers. Each row uses only data up to that day;
-              forward returns are labels, never inputs.
+              Every feature is a ratio or an oscillator rather than a raw price, which is what lets
+              one model learn across tickers. Each row uses only data up to that day. Forward
+              returns are labels, never inputs.
             </p>
             <ul className="mt-5 divide-y divide-border">
               {FEATURE_GROUPS.map(({ title, count, items }) => (
@@ -466,7 +468,7 @@ export default function LandingPage() {
 
         {/* Validation */}
         <Reveal className="mt-6 rounded-lg border border-border bg-card p-7">
-          <h3 className="font-semibold">How accuracy is measured — and why there&apos;s no big number here</h3>
+          <h3 className="font-semibold">How accuracy is measured, and why there is no big number here</h3>
           <div className="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2">
             {VALIDATION_POINTS.map(({ title, description }) => (
               <div key={title}>
@@ -496,11 +498,10 @@ export default function LandingPage() {
               Security
             </p>
             <h2 id="security-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-              Boring, verifiable security.
+              Plain, verifiable security.
             </h2>
             <p className="mt-3 text-muted-foreground">
-              No badges we didn&apos;t earn — just the controls actually in the codebase, which you
-              can read.
+              These are the controls in the codebase, which you can read for yourself.
             </p>
           </Reveal>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -509,37 +510,37 @@ export default function LandingPage() {
                 Icon: Lock,
                 title: "bcrypt-hashed credentials",
                 description:
-                  "Passwords are never stored or logged in plain text. Sessions use short-lived JWTs.",
+                  "Passwords are never stored or logged in plain text. Sessions live on the server and can be revoked.",
               },
               {
                 Icon: Gauge,
                 title: "Rate-limited API",
                 description:
-                  "Per-route limits on auth and data endpoints blunt brute-force and scraping attempts.",
+                  "Per-route limits on auth and data endpoints slow down brute force and scraping.",
               },
               {
                 Icon: ShieldCheck,
                 title: "Validated at both ends",
                 description:
-                  "Every payload is schema-checked twice — Zod in the browser, Pydantic on the server.",
+                  "Every payload is schema-checked twice, with Zod in the browser and Pydantic on the server.",
               },
               {
                 Icon: KeyRound,
                 title: "No brokerage access",
                 description:
-                  "StockSense is read-only market analytics. It never connects to your broker or touches your money.",
+                  "StockSense is read-only market analytics. It never connects to a broker or touches your money.",
               },
               {
                 Icon: Terminal,
                 title: "Hardened headers",
                 description:
-                  "Strict transport and content-security headers ship on every response, both apps.",
+                  "Strict transport and content security headers ship on every response from both apps.",
               },
               {
                 Icon: FlaskConical,
                 title: "Documented limitations",
                 description:
-                  "Data sources, model features, and known failure modes are published, not buried.",
+                  "Data sources, model features and known failure modes are published on the transparency page.",
               },
             ].map(({ Icon, title, description }, i) => (
               <Reveal
@@ -568,12 +569,12 @@ export default function LandingPage() {
               Developers
             </p>
             <h2 id="developers-heading" className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">
-              Documentation you can execute.
+              Documentation you can run.
             </h2>
             <p className="mt-3 text-slate-400">
-              The API reference is interactive OpenAPI — try every endpoint from the browser. The
-              transparency report covers the models: features, data sources, training discipline,
-              and where they fail.
+              The API reference is interactive OpenAPI, so you can try every endpoint from the
+              browser. The transparency report covers the models: features, data sources, training
+              method and where they fail.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <a
@@ -604,7 +605,7 @@ export default function LandingPage() {
             Questions
           </p>
           <h2 id="faq-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
-            Asked before, answered plainly.
+            Common questions.
           </h2>
         </Reveal>
         <Reveal className="max-w-3xl">
@@ -628,10 +629,10 @@ export default function LandingPage() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-8 px-4 py-14 sm:px-6">
           <Reveal>
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              See what the model actually knows.
+              See what the model knows, and what it does not.
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Free, transparent, and honest about what it doesn&apos;t know.
+              Free to use and open about its limits.
             </p>
           </Reveal>
           <Reveal delay={100} className="flex flex-wrap gap-3">

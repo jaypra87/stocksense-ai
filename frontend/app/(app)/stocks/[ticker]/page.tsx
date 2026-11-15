@@ -33,7 +33,7 @@ export default function StockPage() {
   const indicators = useIndicators(ticker, range);
 
   // Quote and history come from different upstream endpoints, and in practice
-  // they fail independently — the live-quote API is the one that gets refused
+  // they fail independently, the live-quote API is the one that gets refused
   // first, while the chart API keeps serving. So only treat the page as truly
   // dead when *both* are gone; a lone quote failure costs the price header, not
   // the chart, indicators, forecast and risk panels below it.

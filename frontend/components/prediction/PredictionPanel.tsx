@@ -132,14 +132,14 @@ function Forecast({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <StatTile
           label={`Expected price range (${data.horizon})`}
-          value={`${fmtCurrency(data.expected_low, currency)} – ${fmtCurrency(data.expected_high, currency)}`}
+          value={`${fmtCurrency(data.expected_low, currency)} to ${fmtCurrency(data.expected_high, currency)}`}
           sub={`from last close ${fmtCurrency(data.last_close, currency)}`}
         />
         <StatTile
           label="Forecast risk"
           value={
             <>
-              {data.risk_score != null ? Math.round(data.risk_score) : "—"}
+              {data.risk_score != null ? Math.round(data.risk_score) : "n/a"}
               <span className="text-sm text-muted-foreground"> / 100</span>
             </>
           }

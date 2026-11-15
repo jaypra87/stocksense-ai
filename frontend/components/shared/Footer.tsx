@@ -15,8 +15,8 @@ export function Footer() {
         <div className="max-w-sm space-y-3">
           <Logo />
           <p className="text-sm text-muted-foreground">
-            Interpretable, uncertainty-aware stock analytics. Educational project — forecasts are
-            probabilistic and frequently wrong. Not financial advice.
+            Stock analytics with the uncertainty shown. This is an educational project, and its
+            forecasts are probabilistic and often wrong. Not financial advice.
           </p>
         </div>
         <nav aria-label="Footer">

@@ -22,7 +22,7 @@ import type { User } from "@/types/auth";
  * with no session it silently starts a guest one, so the dashboard is usable
  * immediately and anything saved belongs to that guest. Saving an account
  * (signup) upgrades the guest in place; signing in merges the guest into the
- * account. The credential is an httpOnly cookie the browser handles itself —
+ * account. The credential is an httpOnly cookie the browser handles itself,
  * no token is ever stored in page-accessible storage.
  */
 

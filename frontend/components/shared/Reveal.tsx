@@ -3,7 +3,7 @@
 import { createElement, useEffect, useRef } from "react";
 
 // Scroll-reveal wrapper: fades content up whenever it enters the viewport,
-// from either scroll direction — the class toggles off on exit so the
+// from either scroll direction, the class toggles off on exit so the
 // animation replays on re-entry. Pure IntersectionObserver, no scroll
 // listeners. Under prefers-reduced-motion the content is simply shown.
 

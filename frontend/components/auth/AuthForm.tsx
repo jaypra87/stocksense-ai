@@ -14,8 +14,8 @@ import { ApiError } from "@/lib/api/client";
 
 const BRAND_POINTS = [
   "Forecasts with confidence scores and expected ranges",
-  "Transparent risk breakdowns — every factor shown",
-  "Honest walk-forward backtests vs naive baselines",
+  "Transparent risk breakdowns with every factor shown",
+  "Walk-forward backtests against naive baselines",
 ];
 
 /**
@@ -69,7 +69,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       : "Sign in to a different account."
     : hasAccount
       ? `You're signed in as ${user?.email}.`
-      : "Keep your watchlist and alerts on every device. Nothing is lost — your guest data stays with you.";
+      : "Keep your watchlist and alerts on every device. Your guest data stays with you.";
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
@@ -94,7 +94,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </ul>
         </div>
         <p className="text-xs text-muted-foreground">
-          Educational project — not financial advice.
+          Educational project, not financial advice.
         </p>
       </div>
 
@@ -158,7 +158,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               )}
               {busy && slow && (
                 <p className="text-xs text-muted-foreground">
-                  Still working — the server may be waking up.
+                  Still working. The server may be waking up.
                 </p>
               )}
 

@@ -28,7 +28,7 @@ export default function TransparencyPage() {
         <div>
           <p className="font-semibold">Couldn&apos;t load model information</p>
           <p className="text-sm text-muted-foreground">
-            The backend may be waking up — try refreshing in a moment.
+            The backend may be waking up. Try refreshing in a moment.
           </p>
         </div>
       </Card>
@@ -40,7 +40,7 @@ export default function TransparencyPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Model transparency</h1>
         <p className="mt-1 text-muted-foreground">
-          How StockSense produces its forecasts — and where it falls short.
+          How StockSense produces its forecasts, and where it falls short.
         </p>
       </div>
 
@@ -92,12 +92,12 @@ export default function TransparencyPage() {
                     <td className="py-2 pr-4 tabular-nums">
                       {m.metrics.classifier?.accuracy != null
                         ? `${(m.metrics.classifier.accuracy * 100).toFixed(1)}%`
-                        : "—"}
+                        : "n/a"}
                     </td>
                     <td className="py-2 pr-4 tabular-nums text-muted-foreground">
                       {m.metrics.classifier?.baseline_accuracy != null
                         ? `${(m.metrics.classifier.baseline_accuracy * 100).toFixed(1)}%`
-                        : "—"}
+                        : "n/a"}
                     </td>
                     <td className="py-2 pr-4">
                       {m.is_active ? (

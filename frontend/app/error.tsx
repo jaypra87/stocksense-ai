@@ -12,7 +12,7 @@ export default function ErrorPage({ reset }: { error: Error; reset: () => void }
       </div>
       <h1 className="text-3xl font-bold tracking-tight">Something went wrong</h1>
       <p className="max-w-md text-muted-foreground">
-        An unexpected error occurred. It wasn&apos;t your fault — try again.
+        Something broke on our side, not yours. Please try again.
       </p>
       <button
         onClick={reset}

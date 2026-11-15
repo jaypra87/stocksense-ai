@@ -1,7 +1,7 @@
 """Model transparency endpoint (public).
 
 Surfaces data sources, the feature list, registered model versions + their
-metrics, methodology, and limitations — everything the Model Transparency page
+metrics, methodology, and limitations and everything the Model Transparency page
 needs to be honest about how forecasts are produced.
 """
 
@@ -37,32 +37,32 @@ _FEATURE_DESCRIPTIONS = {
 }
 
 _DATA_SOURCES = [
-    "Market data: yfinance (Yahoo Finance) in development; pluggable provider "
-    "abstraction supports Polygon/Finnhub in production.",
-    "Technical indicators: computed in-house from OHLCV candles (SMA, EMA, RSI, "
-    "MACD, Bollinger Bands, volatility, drawdown, volume).",
+    "Market data: Yahoo Finance via yfinance. The provider layer is pluggable, so "
+    "Polygon or Finnhub can be swapped in.",
+    "Technical indicators: computed from OHLCV candles (SMA, EMA, RSI, MACD, "
+    "Bollinger Bands, volatility, drawdown, volume).",
     "News sentiment: recent headlines classified with a finance-tuned lexicon.",
-    "All data is cached and persisted to PostgreSQL; nothing is sourced from "
-    "private brokerage accounts.",
+    "All data is cached and stored in PostgreSQL. Nothing comes from private "
+    "brokerage accounts.",
 ]
 
 _METHODOLOGY = (
-    "Two RandomForest models per horizon (1d/7d/30d): a classifier for trend "
-    "direction and a regressor for expected return. Features are scale-free "
-    "(ratios, oscillators) and pooled across many tickers. Labels are forward "
-    "returns over the horizon. Confidence is the classifier's class probability; "
-    "the expected range is the spread across the regressor's trees. Models are "
+    "Two random forest models per horizon (1, 7 and 30 days): a classifier for "
+    "trend direction and a regressor for expected return. Features are scale-free "
+    "(ratios and oscillators) and pooled across many tickers. Labels are forward "
+    "returns over the horizon. Confidence is the classifier's class probability, "
+    "and the expected range is the spread across the regressor's trees. Models are "
     "evaluated with walk-forward backtesting against naive baselines."
 )
 
 _LIMITATIONS = [
-    "Markets are near-efficient; short-term prediction is inherently uncertain "
+    "Markets are close to efficient. Short-term prediction is uncertain by nature, "
     "and these baseline models often do not beat naive baselines.",
-    "Forecasts are probabilistic estimates, not guarantees — confidence reflects "
-    "model agreement, not certainty.",
+    "Forecasts are probabilistic estimates, not guarantees. Confidence reflects how "
+    "much the trees agree, not how certain the outcome is.",
     "Training data is limited and does not capture every market regime, news "
     "shock, or macro event.",
-    "Backtests use only past data at each point, but past performance does not "
+    "Backtests use only past data at each point, and past performance does not "
     "predict future results.",
     "This is an educational project, not investment advice.",
 ]

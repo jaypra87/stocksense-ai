@@ -1,4 +1,5 @@
-const DASH = "—";
+// Shown wherever a value is missing (no quote yet, provider error, no data).
+const DASH = "n/a";
 
 export function fmtCurrency(value: number | null | undefined, currency = "USD"): string {
   if (value == null) return DASH;

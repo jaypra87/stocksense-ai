@@ -12,7 +12,7 @@ import { useWatchlist } from "@/lib/hooks/useWatchlist";
 import { cn } from "@/lib/utils";
 import type { Sentiment } from "@/types/sentiment";
 
-// Latest headlines across the user's most relevant tickers — their watchlist
+// Latest headlines across the user's most relevant tickers, their watchlist
 // when it has entries, popular tickers otherwise. Reuses the per-ticker
 // sentiment endpoint (and its React Query cache key) rather than adding a
 // backend aggregate.

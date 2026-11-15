@@ -12,8 +12,8 @@ import { Spinner } from "@/components/ui/Spinner";
  * Wraps in-app pages. There is nothing to redirect to any more: a visitor
  * without a session gets one. What remains is the brief wait while that
  * happens (longer when the free-tier API is waking up) and the rare case
- * where the API refuses to start one — too many sessions from this address,
- * or the server unreachable — which gets an explanation and a retry.
+ * where the API refuses to start one, too many sessions from this address,
+ * or the server unreachable, which gets an explanation and a retry.
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading, error, challenge, retry } = useAuth();

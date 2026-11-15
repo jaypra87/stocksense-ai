@@ -34,7 +34,7 @@ export default function AlertsPage() {
           setThreshold("");
           toast("Alert created");
         },
-        onError: () => toast("Couldn't create the alert — check the ticker and try again", "error"),
+        onError: () => toast("Couldn't create the alert. Check the ticker and try again.", "error"),
       },
     );
   }
@@ -95,7 +95,7 @@ export default function AlertsPage() {
         ) : !alerts.data || alerts.data.length === 0 ? (
           <div className="flex items-center gap-3 rounded-lg border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
             <BellOff className="h-4 w-4 shrink-0" aria-hidden />
-            No alerts yet — create one above to get notified when a rule triggers.
+            No alerts yet. Create one above to get notified when a rule triggers.
           </div>
         ) : (
           <ul className="divide-y divide-border">

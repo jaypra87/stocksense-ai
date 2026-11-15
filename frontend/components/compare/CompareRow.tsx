@@ -27,20 +27,20 @@ export function CompareRow({ ticker, onRemove }: { ticker: string; onRemove: () 
         </Link>
       </td>
       <td className="py-2.5 pr-4 tabular-nums">
-        {quote.isError ? "—" : fmtCurrency(quote.data?.price, quote.data?.currency ?? "USD")}
+        {quote.isError ? "n/a" : fmtCurrency(quote.data?.price, quote.data?.currency ?? "USD")}
       </td>
       <td className={cn("py-2.5 pr-4 tabular-nums", up ? "text-bullish" : "text-bearish")}>
-        {quote.isLoading ? "…" : quote.isError ? "—" : fmtPercent(quote.data?.change_percent)}
+        {quote.isLoading ? "…" : quote.isError ? "n/a" : fmtPercent(quote.data?.change_percent)}
       </td>
       <td className="py-2.5 pr-4 tabular-nums">
         {risk.isLoading
           ? "…"
           : risk.data
             ? `${Math.round(risk.data.risk_score)} (${risk.data.risk_level.replace("_", " ")})`
-            : "—"}
+            : "n/a"}
       </td>
       <td className="py-2.5 pr-4 capitalize">
-        {sentiment.isLoading ? "…" : (sentiment.data?.overall_label ?? "—")}
+        {sentiment.isLoading ? "…" : (sentiment.data?.overall_label ?? "n/a")}
       </td>
       <td className="py-2.5">
         <button

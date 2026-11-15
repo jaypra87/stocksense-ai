@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Light theme — tuned for WCAG AA contrast on all text tokens. */
+    /* Light theme, tuned for WCAG AA contrast on all text tokens. */
     --background: 220 33% 98%;
     --foreground: 224 47% 10%;
     --card: 0 0% 100%;
@@ -74,7 +74,7 @@
     }
   }
 
-  /* Scroll reveal — Reveal.tsx adds .is-in via IntersectionObserver. */
+  /* Scroll reveal, Reveal.tsx adds .is-in via IntersectionObserver. */
   .reveal {
     opacity: 0;
     transform: translateY(18px);
@@ -87,7 +87,7 @@
     transform: none;
   }
 
-  /* Card hover lift — subtle, GPU-friendly (transform + shadow only). */
+  /* Card hover lift, subtle, GPU-friendly (transform + shadow only). */
   .hover-lift {
     transition:
       transform 0.18s ease,

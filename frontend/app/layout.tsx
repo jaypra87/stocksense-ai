@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 
 import "./globals.css";
 import { Providers } from "./providers";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -10,16 +11,13 @@ const inter = Inter({
   variable: "--font-sans",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "StockSense AI — Interpretable stock analytics",
-    template: "%s · StockSense AI",
+    default: `${SITE_NAME}: ${SITE_TAGLINE}`,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "Live quotes, technical indicators, ML trend forecasts with confidence ranges, news sentiment, risk scoring, and honest backtesting. Educational only — not financial advice.",
+  description: SITE_DESCRIPTION,
   keywords: [
     "stock analytics",
     "ML forecasts",
@@ -29,17 +27,16 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     type: "website",
-    siteName: "StockSense AI",
-    title: "StockSense AI — Interpretable stock analytics",
-    description:
-      "Interpretable, uncertainty-aware market analytics: forecasts with confidence ranges, transparent risk scoring, and honest backtests.",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME}: ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
     url: SITE_URL,
+    locale: "en_US",
   },
   twitter: {
-    card: "summary",
-    title: "StockSense AI — Interpretable stock analytics",
-    description:
-      "Interpretable, uncertainty-aware market analytics. Educational only — not financial advice.",
+    card: "summary_large_image",
+    title: `${SITE_NAME}: ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
   },
 };
 

@@ -32,7 +32,7 @@ export function RiskGauge({ score, level }: { score: number; level: RiskLevel })
         aria-valuenow={Math.round(clamped)}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuetext={`${Math.round(score)} out of 100 — ${meta.label} risk`}
+        aria-valuetext={`${Math.round(score)} out of 100, ${meta.label} risk`}
         className="relative h-2 rounded-full bg-gradient-to-r from-bullish via-warning to-bearish"
       >
         <div

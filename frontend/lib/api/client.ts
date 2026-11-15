@@ -42,7 +42,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   if (response.status === 204) return undefined as T;
 
   // Guarded parse: proxies/gateways can return non-JSON error bodies (HTML 502
-  // pages etc.) — those must still surface as ApiError, not a raw SyntaxError.
+  // pages etc.), those must still surface as ApiError, not a raw SyntaxError.
   const text = await response.text();
   let parsed: unknown = null;
   if (text) {

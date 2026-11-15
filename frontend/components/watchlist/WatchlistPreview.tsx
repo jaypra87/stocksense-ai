@@ -38,7 +38,7 @@ export function WatchlistPreview() {
       ) : !data || data.length === 0 ? (
         <div className="flex items-center gap-3 rounded-xl border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
           <Star className="h-4 w-4 shrink-0" aria-hidden />
-          Nothing saved yet — open a stock and tap “Add to watchlist”.
+          Nothing saved yet. Open a stock and tap “Add to watchlist”.
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -52,7 +52,7 @@ export function WatchlistPreview() {
                 <div className="min-w-0">
                   <div className="font-bold">{item.ticker}</div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {item.company_name ?? "—"}
+                    {item.company_name ?? ""}
                   </div>
                 </div>
               </Link>

@@ -3,7 +3,7 @@
 import { useState, type ReactElement } from "react";
 
 // Tabbed API preview for the landing hero. The request/response mirror the real
-// prediction endpoint (POST /api/v1/predictions/{ticker}) — keep them in sync
+// prediction endpoint (POST /api/v1/predictions/{ticker}); keep them in sync
 // with backend/app/schemas/prediction.py if that contract changes.
 
 const TABS = ["curl", "Python", "JavaScript"] as const;
@@ -137,7 +137,7 @@ export function CodeTerminal() {
             {"  "}
             <span className={tk.kw}>&quot;trend&quot;</span>
             {": "}
-            <span className={tk.str}>&quot;up&quot;</span>
+            <span className={tk.str}>&quot;bullish&quot;</span>
             {", "}
             <span className={tk.kw}>&quot;confidence&quot;</span>
             {": "}
@@ -162,7 +162,7 @@ export function CodeTerminal() {
             {"  "}
             <span className={tk.kw}>&quot;disclaimer&quot;</span>
             {": "}
-            <span className={tk.str}>&quot;Educational only — not financial advice.&quot;</span>
+            <span className={tk.str}>&quot;Educational forecast only. Not financial advice.&quot;</span>
             {"\n}"}
           </code>
         </pre>

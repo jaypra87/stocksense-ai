@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 // Company logo for a ticker, served by parqet's public logo CDN. Falls back
 // to a monogram tile when no logo exists (indexes, foreign listings, etc.).
-// Decorative only — the ticker text is always rendered next to it.
+// Decorative only, the ticker text is always rendered next to it.
 
 const SIZE_PX = { sm: 24, md: 32, lg: 40 } as const;
 
@@ -22,7 +22,7 @@ export function TickerLogo({
 }) {
   const [failed, setFailed] = useState(false);
   const px = SIZE_PX[size];
-  // Strip exchange suffixes (VFV.TO, BRK-B) — the CDN indexes plain symbols.
+  // Strip exchange suffixes (VFV.TO, BRK-B), the CDN indexes plain symbols.
   const symbol = ticker.split(/[.-]/)[0];
 
   if (failed || !symbol) {

@@ -49,7 +49,7 @@ export function BacktestPanel({ ticker }: { ticker: string }) {
 
       {isPending ? (
         <p aria-live="polite" className="text-sm text-muted-foreground">
-          Running walk-forward backtest — training the model across history…
+          Running the walk-forward backtest. Training the model across history…
         </p>
       ) : isError ? (
         <p className="text-sm text-muted-foreground">
@@ -141,7 +141,7 @@ function Results({ data }: { data: Backtest }) {
       >
         {m.beats_baseline
           ? "The model beat the naive baseline on directional accuracy over this period."
-          : "The model did not beat the naive baseline here — a reminder that markets are hard to predict."}
+          : "The model did not beat the naive baseline here. Markets are hard to predict."}
       </div>
 
       <p className="border-t border-border pt-3 text-xs text-muted-foreground">
