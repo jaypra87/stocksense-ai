@@ -33,10 +33,12 @@ export const metadata: Metadata = {
 const API_DOCS_URL = `${process.env.BACKEND_URL ?? "http://localhost:8000"}/docs`;
 
 const PROOF_POINTS = [
-  { value: "3", label: "Forecast horizons: 1, 7 and 30 days" },
-  { value: "17", label: "Model inputs, all listed on this page" },
-  { value: "6", label: "Risk factors, each with its weight shown" },
-  { value: "0", label: "Forecasts published without a confidence score" },
+  { value: "3", label: "Forecast horizons", detail: "1, 7 and 30 days ahead" },
+  { value: "17", label: "Model inputs", detail: "Every one listed on this page" },
+  { value: "200", label: "Trees per forest", detail: "Their vote share is the confidence" },
+  { value: "6", label: "Risk factors", detail: "Each with its weight shown" },
+  { value: "2", label: "Baselines to beat", detail: "In every backtest you run" },
+  { value: "0", label: "Forecasts without a confidence score", detail: "It is part of the answer" },
 ];
 
 const STEPS = [
@@ -239,7 +241,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="border-b border-border">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[46fr_54fr]">
-          <div className="animate-fade-up space-y-6">
+          <div className="min-w-0 animate-fade-up space-y-6">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Market analytics with the uncertainty included
             </p>
@@ -273,22 +275,49 @@ export default function LandingPage() {
               wrong, and the app tells you when.
             </p>
           </div>
-          <div className="animate-fade-up [animation-delay:150ms]">
+          {/* min-w-0 lets the code panel scroll on narrow screens instead of
+              widening the whole page to fit its longest line. */}
+          <div className="min-w-0 animate-fade-up [animation-delay:150ms]">
             <CodeTerminal />
           </div>
         </div>
       </section>
 
-      {/* Proof strip */}
-      <section aria-label="At a glance" className="border-b border-border bg-card/40">
-        <dl className="mx-auto grid max-w-6xl grid-cols-2 gap-px px-4 py-8 sm:px-6 md:grid-cols-4 md:py-10">
-          {PROOF_POINTS.map(({ value, label }, i) => (
-            <Reveal key={label} delay={i * 70} className="flex flex-col-reverse px-2 py-3 md:px-4">
-              <dt className="mt-1 text-sm text-muted-foreground">{label}</dt>
-              <dd className="text-3xl font-bold tabular-nums tracking-tight">{value}</dd>
-            </Reveal>
-          ))}
-        </dl>
+      {/* Proof strip. Every cell is top-anchored with a fixed-height number
+          row, so labels that wrap to two lines cannot push the figures out
+          of line with their neighbours. */}
+      <section aria-labelledby="glance-heading" className="border-b border-border bg-card/40">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
+          <Reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                At a glance
+              </p>
+              <h2 id="glance-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+                The numbers behind every forecast.
+              </h2>
+            </div>
+            <p className="max-w-md text-sm text-muted-foreground">
+              None of these are marketing figures. Each one is a constant in the codebase, and the
+              sections below show where it comes from.
+            </p>
+          </Reveal>
+          <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-card md:grid-cols-3">
+            {PROOF_POINTS.map(({ value, label, detail }, i) => (
+              <Reveal
+                key={label}
+                delay={(i % 3) * 70}
+                className="-ml-px -mt-px flex flex-col border-l border-t border-border p-5 md:p-6"
+              >
+                <dt className="order-2 mt-2 text-sm font-semibold">{label}</dt>
+                <dd className="order-1 flex h-12 items-center text-4xl font-bold tabular-nums tracking-tight">
+                  {value}
+                </dd>
+                <dd className="order-3 mt-0.5 text-sm text-muted-foreground">{detail}</dd>
+              </Reveal>
+            ))}
+          </dl>
+        </div>
       </section>
 
       {/* How it works */}
