@@ -58,13 +58,16 @@ class MetadataDTO(BaseModel):
     extra: dict = {}
 
 
-# Publishers separate headline clauses with " -- ", " — " or " – ". A colon reads
-# the same and keeps the UI free of dashes.
+# Publishers separate headline clauses with " -- ", " — " or " – ". One dash
+# introduces a second clause, which a colon does just as well; a pair wraps an
+# aside, which commas do. Either way the UI stays free of dashes.
 _CLAUSE_DASH = re.compile(r"\s+(?:--+|—|–)\s+")
 
 
 def tidy_headline(text: str) -> str:
-    text = _CLAUSE_DASH.sub(": ", text.strip())
+    text = text.strip()
+    joiner = ", " if len(_CLAUSE_DASH.findall(text)) == 2 else ": "
+    text = _CLAUSE_DASH.sub(joiner, text)
     return re.sub(r"\s{2,}", " ", text)
 
 
