@@ -87,6 +87,18 @@
     transform: none;
   }
 
+  /* Landing page opening panel: while it fills the viewport, IntroSplash.tsx
+     sets html[data-intro] and the header steps aside. */
+  html[data-intro] .site-header {
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* The hidden header still takes its row, so the panel subtracts it to fill
+     exactly one viewport. 57px = header padding + 32px controls + border. */
+  .intro-panel {
+    min-height: calc(100svh - 57px);
+  }
+
   /* Card hover lift, subtle, GPU-friendly (transform + shadow only). */
   .hover-lift {
     transition:

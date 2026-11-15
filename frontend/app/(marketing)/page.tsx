@@ -18,6 +18,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ForecastPreview } from "@/components/marketing/ForecastPreview";
+import { IntroSplash } from "@/components/marketing/IntroSplash";
 import { Reveal } from "@/components/shared/Reveal";
 import { ScrollBackground } from "@/components/marketing/ScrollBackground";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/site";
@@ -230,8 +231,10 @@ export default function LandingPage() {
 
       <ScrollBackground />
 
+      <IntroSplash />
+
       {/* Hero */}
-      <section className="border-b border-border">
+      <section id="hero" className="scroll-mt-14 border-b border-border">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[46fr_54fr]">
           <div className="min-w-0 animate-fade-up space-y-6">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
