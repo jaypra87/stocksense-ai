@@ -5,10 +5,11 @@ and these DTOs — never on yfinance or any specific vendor. That is what lets u
 swap yfinance (dev) for Polygon/Finnhub (prod) without touching the rest of the app.
 """
 
+import re
 from abc import ABC, abstractmethod
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 # --- Data Transfer Objects: the normalized shapes every provider must return ---
 
@@ -57,12 +58,27 @@ class MetadataDTO(BaseModel):
     extra: dict = {}
 
 
+# Publishers separate headline clauses with " -- ", " — " or " – ". A colon reads
+# the same and keeps the UI free of dashes.
+_CLAUSE_DASH = re.compile(r"\s+(?:--+|—|–)\s+")
+
+
+def tidy_headline(text: str) -> str:
+    text = _CLAUSE_DASH.sub(": ", text.strip())
+    return re.sub(r"\s{2,}", " ", text)
+
+
 class NewsItemDTO(BaseModel):
     title: str
     publisher: str | None = None
     url: str | None = None
     published_at: datetime | None = None
     summary: str | None = None
+
+    @field_validator("title", "summary")
+    @classmethod
+    def _tidy(cls, value: str | None) -> str | None:
+        return tidy_headline(value) if value else value
 
 
 # --- Errors the rest of the app catches and maps to HTTP responses ---
