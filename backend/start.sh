@@ -6,9 +6,9 @@
 # request is answered. Only migrations genuinely have to finish before we serve
 # (they change the schema the handlers read); the demo-data/model bootstrap does
 # not, and it is the slow part — it fetches four tickers from the market-data
-# provider and retrains the model whenever the artifact is missing, which on an
-# ephemeral disk is every single boot. Running it inline used to hold the port
-# closed for minutes, which is exactly what made the first login feel hung.
+# provider and restores the model files from the database (or retrains, when a
+# horizon has no stored copy). Running it inline used to hold the port closed
+# for minutes, which is exactly what made the first login feel hung.
 #
 # So: migrate, bind the port, and let the bootstrap finish in the background.
 set -e

@@ -141,7 +141,10 @@ def _load_active(db: Session, horizon: str) -> tuple[registry.ModelBundle, str]:
     ).scalar_one_or_none()
     if artifact is None:
         raise NoModelError(f"no active model for horizon {horizon}")
-    return registry.load_bundle(artifact.path), artifact.model_version
+    # The file may be gone after a restart on an ephemeral disk; this puts it
+    # back from the DB copy, or raises ModelNotReadyError if there is none yet.
+    path = registry.ensure_local(artifact)
+    return registry.load_bundle(str(path)), artifact.model_version
 
 
 def _store(db: Session, **kw) -> None:

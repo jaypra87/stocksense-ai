@@ -18,6 +18,9 @@ from sqlalchemy import select  # noqa: E402
 from app.core.logging import configure_logging  # noqa: E402
 from app.db.models.model_artifact import ModelArtifact  # noqa: E402
 from app.db.session import system_session  # noqa: E402
+from app.ml import registry  # noqa: E402
+from app.ml.features import HORIZON_DAYS  # noqa: E402
+from app.ml.registry import NoModelError  # noqa: E402
 from app.ml.training import train_and_register  # noqa: E402
 from app.services import (  # noqa: E402
     auth_service,
@@ -36,11 +39,29 @@ TICKERS = ["AAPL", "MSFT", "NVDA", "TSLA"]
 
 
 def _has_usable_model(db) -> bool:
-    """An active model exists AND its artifact file is present on disk."""
-    active = db.execute(
-        select(ModelArtifact).where(ModelArtifact.is_active.is_(True))
-    ).scalars().all()
-    return bool(active) and all(Path(a.path).exists() for a in active)
+    """Every horizon has an active model whose file is on disk, restoring any
+    that the (ephemeral) disk lost from the copy kept in the database.
+
+    Only a horizon with no restorable artifact forces a retrain, which on the
+    free tier is a multi-minute job during which that horizon cannot serve.
+    """
+    active = {
+        a.horizon: a
+        for a in db.execute(
+            select(ModelArtifact).where(ModelArtifact.is_active.is_(True))
+        ).scalars()
+    }
+    for horizon in HORIZON_DAYS:
+        artifact = active.get(horizon)
+        if artifact is None:
+            log.info("no active model for %s", horizon)
+            return False
+        try:
+            registry.ensure_local(artifact)
+        except NoModelError as exc:
+            log.info("cannot restore %s: %s", horizon, exc)
+            return False
+    return True
 
 
 def main() -> None:

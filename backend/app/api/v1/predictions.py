@@ -9,7 +9,7 @@ from app.core.config import get_settings
 from app.core.rate_limit import rate_limit
 from app.db.session import get_db
 from app.ml.features import HORIZON_DAYS
-from app.ml.registry import NoModelError
+from app.ml.registry import ModelNotReadyError, NoModelError
 from app.schemas.prediction import PredictionHistoryItem, PredictionOut
 from app.services import prediction_service
 from app.services.market_data.base import InvalidTickerError, MarketDataProvider, ProviderError
@@ -45,10 +45,16 @@ def create_prediction(
         )
     try:
         return prediction_service.predict(db, redis, provider, ticker, horizon)
+    except ModelNotReadyError:
+        raise HTTPException(
+            status_code=503,
+            detail="The forecast model is still warming up after a restart. "
+            "Try again in a minute.",
+        ) from None
     except NoModelError:
         raise HTTPException(
             status_code=503,
-            detail="No trained model available yet. Run scripts/train_baseline.py first.",
+            detail="No trained model is available yet.",
         ) from None
     except InvalidTickerError:
         raise HTTPException(status_code=404, detail=f"Unknown ticker: {ticker}") from None

@@ -11,6 +11,7 @@ For each horizon we:
 
 import logging
 import math
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -171,6 +172,8 @@ def _register(db: Session, version: str, horizon: str, path: str, metrics: dict)
             metrics_json=metrics,
             feature_list_json=FEATURE_COLS,
             is_active=True,
+            # The hosting disk is ephemeral; the DB copy is what survives a restart.
+            blob=Path(path).read_bytes(),
         )
     )
     db.commit()

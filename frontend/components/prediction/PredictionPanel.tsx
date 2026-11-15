@@ -71,8 +71,10 @@ export function PredictionPanel({
         </div>
       ) : isError ? (
         <p className="text-sm text-muted-foreground">
-          {error instanceof ApiError && error.status === 503
-            ? "No trained model available yet. Run the training script to enable forecasts."
+          {/* 503 carries a human-readable reason from the server: the model is
+              still warming up after a restart, or none has been trained. */}
+          {error instanceof ApiError && error.status === 503 && error.message
+            ? error.message
             : "Couldn't generate a forecast right now."}
         </p>
       ) : data ? (

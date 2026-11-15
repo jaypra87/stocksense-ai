@@ -50,9 +50,17 @@ runs migrations → binds the port → bootstraps a demo user + trained model
 
 > Render's free web service spins down after ~15 min idle, so the first request
 > after idle waits for a container start. The entrypoint only blocks on
-> migrations before serving — the demo-data warm and model training run in the
+> migrations before serving — the demo-data warm and model check run in the
 > background — so that wait is the platform's, not the app's. Set
 > `SKIP_BOOTSTRAP=1` to skip the background work entirely.
+>
+> The container's disk is ephemeral, so every wake would lose the trained model
+> files. Each registry row therefore keeps a copy of its bundle (`blob` column);
+> on boot `bootstrap.py` restores the active bundles from the database in seconds
+> and only retrains when a horizon has nothing to restore. The very first boot
+> after upgrading to this version still retrains once, to populate those copies.
+> While a horizon is being retrained, its forecast returns 503 with a
+> "warming up" message rather than failing.
 
 ### If the deployment misbehaves
 
@@ -167,6 +175,8 @@ docker compose up --build
 - [ ] `/api/v1/health/deep` fetched via the Vercel URL reports `"proxy": "trusted"`.
 - [ ] `/api/v1/health/deep` fetched directly on Render reports your own address as `client`, not a 172.x or 10.x one.
 - [ ] Migrations applied on boot (`start.sh`); a model trained (`bootstrap.py`).
+- [ ] After a restart, `GET /api/v1/models` still shows the same active `model_version`s
+      (restored from the database) rather than a fresh `boot-…` version per wake.
 - [ ] `BACKEND_URL` on Vercel points at the Render service root (no `/api/v1`).
 - [ ] Turnstile keys set on both sides (`TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`).
 - [ ] GitHub repository variable `HEALTH_URL` set so the keep-alive workflow runs.
