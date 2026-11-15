@@ -3,7 +3,6 @@
 import {
   Bell,
   GitCompare,
-  LayoutDashboard,
   LogOut,
   Menu,
   Settings,
@@ -22,7 +21,6 @@ import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/watchlist", label: "Watchlist", Icon: Star },
   { href: "/compare", label: "Compare", Icon: GitCompare },
   { href: "/alerts", label: "Alerts", Icon: Bell },
