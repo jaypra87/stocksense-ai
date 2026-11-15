@@ -109,8 +109,6 @@ export function ForecastPreview() {
 
       <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
         Relatively confident, but this is still a probabilistic estimate.
-        <br />
-        <span className="font-semibold">Educational forecast only. Not financial advice.</span>
       </p>
     </div>
   );

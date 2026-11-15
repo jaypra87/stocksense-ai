@@ -162,11 +162,7 @@ function Forecast({
         </ul>
       </div>
 
-      <p className="border-t border-border pt-3 text-xs text-muted-foreground">
-        {data.notes}
-        <br />
-        <span className="font-semibold">{data.disclaimer}</span> · model {data.model_version}
-      </p>
+      <p className="border-t border-border pt-3 text-xs text-muted-foreground">{data.notes}</p>
     </div>
   );
 }

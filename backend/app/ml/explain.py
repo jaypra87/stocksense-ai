@@ -44,6 +44,17 @@ def describe_factor(feature: str, value: float) -> str:
             return f"Price is about {abs(v) * 100:.0f}% below its recent peak"
         case "rel_volume":
             return f"Volume is about {v:.1f}x its recent average"
+        case "ret_0" | "ret_1" | "ret_2" | "ret_3" | "ret_4":
+            lag = int(feature[-1])
+            move = "up" if v > 0 else "down"
+            when = (
+                "The latest daily move"
+                if lag == 0
+                else f"The daily move {lag} session{'s' if lag > 1 else ''} earlier"
+            )
+            if abs(v) < 0.0005:
+                return f"{when} was flat"
+            return f"{when} was {move} {abs(v) * 100:.1f}%"
         case _:
             direction = "elevated" if v > 0 else "depressed"
             return f"{feature} is {direction}"
