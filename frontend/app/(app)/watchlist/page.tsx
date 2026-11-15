@@ -3,6 +3,7 @@
 import { Star, Trash2 } from "lucide-react";
 import Link from "next/link";
 
+import { BackToDashboard } from "@/components/shared/BackToDashboard";
 import { Reveal } from "@/components/shared/Reveal";
 import { TickerLogo } from "@/components/shared/TickerLogo";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -24,6 +25,7 @@ export default function WatchlistPage() {
 
   return (
     <div className="space-y-6">
+      <BackToDashboard />
       <div>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Watchlist</h1>
         <p className="mt-1 text-sm text-muted-foreground">Your saved tickers.</p>

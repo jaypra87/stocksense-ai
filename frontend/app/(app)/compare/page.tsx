@@ -3,6 +3,7 @@
 import { GitCompare, Plus } from "lucide-react";
 import { useState } from "react";
 
+import { BackToDashboard } from "@/components/shared/BackToDashboard";
 import { CompareChart } from "@/components/compare/CompareChart";
 import { CompareRow } from "@/components/compare/CompareRow";
 import { Button } from "@/components/ui/Button";
@@ -27,6 +28,7 @@ export default function ComparePage() {
 
   return (
     <div className="space-y-6">
+      <BackToDashboard />
       <div>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Compare</h1>
         <p className="mt-1 text-sm text-muted-foreground">

@@ -3,6 +3,7 @@
 import { Bell, BellOff, Pause, Play, Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import { BackToDashboard } from "@/components/shared/BackToDashboard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
@@ -41,6 +42,7 @@ export default function AlertsPage() {
 
   return (
     <div className="space-y-6">
+      <BackToDashboard />
       <div>
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Alerts</h1>
         <p className="mt-1 text-sm text-muted-foreground">
