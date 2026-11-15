@@ -425,7 +425,7 @@ export default function LandingPage() {
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 {title}
               </h3>
-              <p className="mt-3 overflow-x-auto py-1 font-mono text-base">{body}</p>
+              <p className="mt-3 overflow-x-auto py-1 font-mono text-base font-semibold">{body}</p>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{caption}</p>
             </Reveal>
           ))}
