@@ -32,24 +32,36 @@ export function TradeTicket({
   open,
   onClose,
   initialSide = "buy",
+  initialQuantity,
 }: {
   ticker: string;
   open: boolean;
   onClose: () => void;
   initialSide?: TradeSide;
+  /** Pre-filled share count, for a draft handed over from Stock-man. */
+  initialQuantity?: number;
 }) {
   if (!open) return null;
-  return <Ticket ticker={ticker} onClose={onClose} initialSide={initialSide} />;
+  return (
+    <Ticket
+      ticker={ticker}
+      onClose={onClose}
+      initialSide={initialSide}
+      initialQuantity={initialQuantity}
+    />
+  );
 }
 
 function Ticket({
   ticker,
   onClose,
   initialSide,
+  initialQuantity,
 }: {
   ticker: string;
   onClose: () => void;
   initialSide: TradeSide;
+  initialQuantity?: number;
 }) {
   const quote = useQuote(ticker);
   const portfolio = usePortfolio();
@@ -60,7 +72,7 @@ function Ticket({
 
   const [side, setSide] = useState<TradeSide>(initialSide);
   const [mode, setMode] = useState<Mode>("shares");
-  const [raw, setRaw] = useState("");
+  const [raw, setRaw] = useState(initialQuantity ? String(initialQuantity) : "");
   const [error, setError] = useState<string | null>(null);
 
   // Escape closes, the page behind stays put, and focus goes back to the

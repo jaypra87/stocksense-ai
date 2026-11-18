@@ -50,6 +50,9 @@ PROTECTED: list[tuple[str, str]] = [
     ("POST", "/api/v1/portfolio/trades"),
     ("GET", "/api/v1/portfolio/trades"),
     ("POST", "/api/v1/portfolio/reset"),
+    ("GET", "/api/v1/stockman/status"),
+    ("GET", "/api/v1/stockman/conversations"),
+    ("POST", "/api/v1/stockman/conversations"),
     ("GET", "/api/v1/auth/me"),
     ("GET", "/api/v1/auth/sessions"),
     ("POST", "/api/v1/auth/logout"),
@@ -84,9 +87,7 @@ def test_protected_routes_reject_anonymous_callers(
 
 
 @pytest.mark.parametrize(("method", "path"), PROTECTED)
-def test_protected_routes_reject_a_forged_token(
-    client: TestClient, method: str, path: str
-) -> None:
+def test_protected_routes_reject_a_forged_token(client: TestClient, method: str, path: str) -> None:
     resp = client.request(method, path, headers={"Authorization": "Bearer not.a.real.jwt"})
     assert resp.status_code == 401, f"{method} {path} returned {resp.status_code}"
 
@@ -126,11 +127,7 @@ def test_no_route_was_left_out_of_the_protected_list() -> None:
         | set(PUBLIC_AUTH_FLOW)
         | set(PUBLIC_SESSION_START)
     )
-    live = {
-        r.path
-        for r in app.routes
-        if getattr(r, "path", "").startswith("/api/v1")
-    }
+    live = {r.path for r in app.routes if getattr(r, "path", "").startswith("/api/v1")}
     # Compare by template shape: the lists above use concrete tickers/ids.
     templated = {p for p in live if "{" in p}
     concrete = live - templated

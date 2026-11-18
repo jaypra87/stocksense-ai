@@ -44,7 +44,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {/* aria-live region: screen readers announce toasts without focus stealing. */}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2"
+        className="pointer-events-none fixed bottom-24 right-4 z-50 flex w-full max-w-sm flex-col gap-2"
       >
         {toasts.map((t) => (
           <div

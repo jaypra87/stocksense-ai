@@ -35,6 +35,9 @@ services:
       - key: TRUSTED_CLIENT_IP_HEADER
         value: CF-Connecting-IP   # Render fronts services with Cloudflare, which stamps the real
                                   # client address here; X-Forwarded-For ends in Cloudflare's own IP
+      - key: ANTHROPIC_API_KEY
+        sync: false          # Stock-man (chat analyst). Optional: unset = the feature reports itself offline.
+                             # Daily token budgets (STOCKMAN_*_DAILY_TOKENS) bound what it can spend.
       - key: TURNSTILE_SECRET_KEY
         sync: false          # Cloudflare Turnstile secret key (bot protection). Optional but
                              # strongly recommended: without it no challenge is ever issued.

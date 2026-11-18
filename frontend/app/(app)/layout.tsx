@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { Footer } from "@/components/shared/Footer";
 import { Header } from "@/components/shared/Header";
+import { StockmanDock } from "@/components/stockman/StockmanDock";
 
 // In-app pages are private; keep them out of search indexes.
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         <Footer />
+        <StockmanDock />
       </div>
     </AuthGuard>
   );

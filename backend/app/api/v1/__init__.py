@@ -8,6 +8,7 @@ from app.api.v1 import (
     models,
     portfolio,
     predictions,
+    stockman,
     stocks,
     watchlist,
 )
@@ -21,4 +22,5 @@ api_router.include_router(watchlist.router)
 api_router.include_router(alerts.router)
 api_router.include_router(backtests.router)
 api_router.include_router(portfolio.router)
+api_router.include_router(stockman.router)
 api_router.include_router(models.router)

@@ -102,6 +102,21 @@ class Settings(BaseSettings):
     backtest_rate_limit: int = 20
     backtest_rate_window_seconds: int = 300
 
+    # Stock-man, the chat analyst. Unset key = the feature reports itself
+    # offline; nothing else in the app depends on it.
+    anthropic_api_key: str | None = None
+    stockman_model: str = "claude-haiku-5-5"
+    # Per-IP message cap, then two token budgets that bound the bill: one per
+    # user per day, one for the whole deployment per day. Both are enforced
+    # on the input+output tokens the API reports, not estimated.
+    stockman_rate_limit: int = 30
+    stockman_rate_window_seconds: int = 300
+    stockman_user_daily_tokens: int = 200_000
+    stockman_global_daily_tokens: int = 4_000_000
+    # Tool rounds per answer. Each round is one model call plus the tools it
+    # asked for; the final round is forced to answer without tools.
+    stockman_max_tool_rounds: int = 6
+
     market_data_provider: str = "yfinance"
     polygon_api_key: str | None = None
     finnhub_api_key: str | None = None
@@ -115,7 +130,7 @@ class Settings(BaseSettings):
         to the psycopg3 form so the URL works no matter how it's supplied."""
         for prefix in ("postgresql+psycopg2://", "postgresql://", "postgres://"):
             if v.startswith(prefix):
-                return "postgresql+psycopg://" + v[len(prefix):]
+                return "postgresql+psycopg://" + v[len(prefix) :]
         return v
 
     @model_validator(mode="after")
@@ -137,9 +152,7 @@ class Settings(BaseSettings):
 
         if not _is_loopback(self.database_url) and "sslmode=" not in self.database_url:
             joiner = "&" if "?" in self.database_url else "?"
-            object.__setattr__(
-                self, "database_url", f"{self.database_url}{joiner}sslmode=require"
-            )
+            object.__setattr__(self, "database_url", f"{self.database_url}{joiner}sslmode=require")
 
         if self.redis_url.startswith("redis://") and not _is_loopback(self.redis_url):
             logging.getLogger("stocksense.config").warning(
@@ -223,6 +236,10 @@ class Settings(BaseSettings):
     @property
     def turnstile_enabled(self) -> bool:
         return bool(self.turnstile_secret_key)
+
+    @property
+    def stockman_enabled(self) -> bool:
+        return bool(self.anthropic_api_key)
 
 
 @lru_cache

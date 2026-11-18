@@ -30,7 +30,11 @@ class InMemoryRedis:
         self.store[key] = value
 
     def incr(self, key: str) -> int:
-        self.counters[key] = self.counters.get(key, 0) + 1
+        return self.incrby(key, 1)
+
+    def incrby(self, key: str, amount: int) -> int:
+        self.counters[key] = self.counters.get(key, 0) + amount
+        self.store[key] = str(self.counters[key])
         return self.counters[key]
 
     def expire(self, key: str, seconds: int) -> None:

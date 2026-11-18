@@ -2,6 +2,7 @@
 
 import {
   Bell,
+  Bot,
   Briefcase,
   GitCompare,
   LogOut,
@@ -26,6 +27,7 @@ const NAV = [
   { href: "/watchlist", label: "Watchlist", Icon: Star },
   { href: "/compare", label: "Compare", Icon: GitCompare },
   { href: "/alerts", label: "Alerts", Icon: Bell },
+  { href: "/stock-man", label: "Stock-man", Icon: Bot },
   { href: "/settings", label: "Settings", Icon: Settings },
 ];
 

@@ -68,7 +68,10 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   return parsed as T;
 }
 
-function describeError(parsed: unknown, fallback: string): { message: string; challenge: boolean } {
+export function describeError(
+  parsed: unknown,
+  fallback: string,
+): { message: string; challenge: boolean } {
   if (typeof parsed === "object" && parsed !== null && "detail" in parsed) {
     const detail = (parsed as { detail: unknown }).detail;
     if (typeof detail === "string") return { message: detail, challenge: false };

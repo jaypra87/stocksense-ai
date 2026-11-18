@@ -170,6 +170,53 @@
     }
   }
 
+  /* Stock-man's dock panel grows out of its button; the caret and the
+     typing dots cover the wait for the first token. */
+  .animate-pop {
+    transform-origin: bottom right;
+    animation: pop-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .stream-caret {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    margin-left: 2px;
+    vertical-align: -0.15em;
+    background: currentColor;
+    animation: intro-blink 1s steps(1, end) infinite;
+  }
+  .typing-dot {
+    animation: typing 1.2s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  @keyframes typing {
+    0%,
+    80%,
+    100% {
+      opacity: 0.35;
+      transform: translateY(0);
+    }
+    40% {
+      opacity: 1;
+      transform: translateY(-3px);
+    }
+  }
+
   /* Card hover lift, subtle, GPU-friendly (transform + shadow only). */
   .hover-lift {
     transition:
