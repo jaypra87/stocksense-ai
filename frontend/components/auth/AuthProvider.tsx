@@ -4,14 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
-import {
-  guestApi,
-  loginApi,
-  logoutAllApi,
-  logoutApi,
-  meApi,
-  signupApi,
-} from "@/lib/api/auth";
+import { guestApi, loginApi, logoutAllApi, logoutApi, meApi, signupApi } from "@/lib/api/auth";
 import { ApiError, SESSION_LOST_EVENT } from "@/lib/api/client";
 import type { User } from "@/types/auth";
 
@@ -43,6 +36,30 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// What a sleeping backend looks like from here: the proxy's 502 when it
+// cannot reach the API, a 503 or 504 from the host while the container
+// boots, or a dropped connection. Anything else (a 401, a 429) is an answer.
+const COLD_STATUSES = new Set([502, 503, 504]);
+
+function isColdStart(err: unknown): boolean {
+  if (err instanceof ApiError) return COLD_STATUSES.has(err.status);
+  return !(err instanceof DOMException && err.name === "AbortError");
+}
+
+// Keep asking while the backend wakes up instead of surfacing the first
+// gateway error as a failure the visitor has to click through. Spaced out to
+// about a minute and a half in total, past which something is really wrong.
+async function untilAwake<T>(call: () => Promise<T>, attempts = 10): Promise<T> {
+  for (let i = 0; ; i++) {
+    try {
+      return await call();
+    } catch (err) {
+      if (!isColdStart(err) || i >= attempts - 1) throw err;
+      await new Promise((resolve) => setTimeout(resolve, Math.min(8000, 1500 * (i + 1))));
+    }
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -52,38 +69,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [challenge, setChallenge] = useState(false);
   const inFlight = useRef<Promise<void> | null>(null);
 
-  const startSession = useCallback(
-    async (turnstileToken?: string | null) => {
-      // Coalesce: several panels can lose the session at once.
-      if (inFlight.current) return inFlight.current;
-      inFlight.current = (async () => {
-        setError(null);
-        setChallenge(false);
-        try {
-          const res = await guestApi(turnstileToken);
-          setUser(res.user);
-        } catch (err) {
-          setUser(null);
-          if (err instanceof ApiError) {
-            setChallenge(err.challenge);
-            setError(err.message);
-          } else {
-            setError("Could not reach the server. Please try again.");
-          }
-        } finally {
-          setLoading(false);
-          inFlight.current = null;
+  const startSession = useCallback(async (turnstileToken?: string | null) => {
+    // Coalesce: several panels can lose the session at once.
+    if (inFlight.current) return inFlight.current;
+    inFlight.current = (async () => {
+      setError(null);
+      setChallenge(false);
+      try {
+        const res = await untilAwake(() => guestApi(turnstileToken));
+        setUser(res.user);
+      } catch (err) {
+        setUser(null);
+        if (err instanceof ApiError) {
+          setChallenge(err.challenge);
+          setError(err.message);
+        } else {
+          setError("Could not reach the server. Please try again.");
         }
-      })();
-      return inFlight.current;
-    },
-    [],
-  );
+      } finally {
+        setLoading(false);
+        inFlight.current = null;
+      }
+    })();
+    return inFlight.current;
+  }, []);
 
   // Resolve the session on first load: existing cookie → me; otherwise guest.
   useEffect(() => {
     let cancelled = false;
-    meApi()
+    untilAwake(meApi)
       .then((me) => {
         if (!cancelled) {
           setUser(me);

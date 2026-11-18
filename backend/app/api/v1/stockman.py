@@ -5,13 +5,15 @@ session because the request's session is closed when the handler returns,
 which with a streaming body is before the first byte goes out.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import uuid
 from collections.abc import Iterator
 from functools import lru_cache
+from typing import TYPE_CHECKING, Any
 
-import anthropic
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from redis import Redis
@@ -41,6 +43,9 @@ from app.services.stockman.budget import BudgetExceeded
 from app.services.stockman.digest import DigestBusy
 from app.services.stockman.tools import ToolContext
 
+if TYPE_CHECKING:
+    import anthropic
+
 logger = logging.getLogger("stocksense.stockman")
 
 _settings = get_settings()
@@ -60,7 +65,12 @@ RESTING = "Stock-man has used up its budget for today and is resting until tomor
 
 
 @lru_cache
-def get_anthropic_client() -> anthropic.Anthropic:
+def get_anthropic_client() -> Any:
+    # The SDK is imported here, on the first Stock-man request, rather than at
+    # boot: it is the single slowest import in the app and the session
+    # bootstrap the whole site waits on never needs it.
+    import anthropic
+
     return anthropic.Anthropic(api_key=_settings.anthropic_api_key, max_retries=2, timeout=90.0)
 
 
@@ -81,7 +91,7 @@ def get_digest(
     db: Session = Depends(get_db),
     redis: Redis = Depends(get_redis),
     provider: MarketDataProvider = Depends(get_provider),
-    client: anthropic.Anthropic = Depends(get_anthropic_client),
+    client: Any = Depends(get_anthropic_client),
 ) -> dict:
     """Today's digest, written on the first call of the day."""
     return _digest(db, redis, provider, client, user.id, force=False)
@@ -93,7 +103,7 @@ def refresh_digest(
     db: Session = Depends(get_db),
     redis: Redis = Depends(get_redis),
     provider: MarketDataProvider = Depends(get_provider),
-    client: anthropic.Anthropic = Depends(get_anthropic_client),
+    client: Any = Depends(get_anthropic_client),
 ) -> dict:
     return _digest(db, redis, provider, client, user.id, force=True)
 
@@ -102,10 +112,12 @@ def _digest(
     db: Session,
     redis: Redis,
     provider: MarketDataProvider,
-    client: anthropic.Anthropic,
+    client: Any,
     user_id: uuid.UUID,
     force: bool,
 ) -> dict:
+    import anthropic
+
     unavailable = {"available": False, "disclaimer": DISCLAIMER}
     if not _settings.stockman_enabled:
         return {**unavailable, "reason": OFFLINE}
@@ -213,7 +225,7 @@ def send_message(
     db: Session = Depends(get_db),
     redis: Redis = Depends(get_redis),
     provider: MarketDataProvider = Depends(get_provider),
-    client: anthropic.Anthropic = Depends(get_anthropic_client),
+    client: Any = Depends(get_anthropic_client),
 ) -> StreamingResponse:
     if not _settings.stockman_enabled:
         raise HTTPException(status_code=503, detail=OFFLINE)
@@ -242,6 +254,8 @@ def send_message(
     db.commit()
 
     def events() -> Iterator[str]:
+        import anthropic
+
         session = SessionLocal()
         set_rls_user(session, user.id)
         ctx = ToolContext(db=session, redis=redis, provider=provider, user_id=user.id)

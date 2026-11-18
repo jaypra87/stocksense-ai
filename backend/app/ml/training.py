@@ -15,14 +15,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import (
-    accuracy_score,
-    f1_score,
-    mean_absolute_error,
-    mean_squared_error,
-    r2_score,
-)
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
@@ -47,6 +39,9 @@ def train_and_register(
     tickers: list[str] | None = None,
     lookback: str = "5y",
 ) -> dict:
+    # scikit-learn is the slowest import in the app and only training needs it.
+    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+
     tickers = tickers or DEFAULT_TICKERS
 
     # Compute indicator frames once per ticker; reused across all horizons.
@@ -132,6 +127,14 @@ def _assemble(frames: list[pd.DataFrame], horizon: str):
 
 
 def _evaluate(clf, reg, X_te, yc_te, yr_te, n_train: int) -> dict:
+    from sklearn.metrics import (
+        accuracy_score,
+        f1_score,
+        mean_absolute_error,
+        mean_squared_error,
+        r2_score,
+    )
+
     clf_pred = clf.predict(X_te)
     reg_pred = reg.predict(X_te)
 

@@ -7,13 +7,17 @@ stops two tabs from paying for the same digest; the unique (user, day) key
 is the backstop if the lock is ever lost.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import uuid
 from datetime import UTC, date, datetime
+from typing import TYPE_CHECKING
 
-import anthropic
-from anthropic.types import MessageParam
+if TYPE_CHECKING:
+    import anthropic
+    from anthropic.types import MessageParam
 from redis import Redis, RedisError
 from sqlalchemy import select
 from sqlalchemy.orm import Session

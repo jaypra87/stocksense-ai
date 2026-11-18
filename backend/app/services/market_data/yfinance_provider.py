@@ -12,10 +12,11 @@ wherever a value can be derived from them: a blocked quote endpoint should cost
 us freshness and a few extra fields, not the whole page.
 """
 
+# yfinance (and the BeautifulSoup stack it drags in) is imported inside each
+# method: it costs a third of a second on a laptop and far more on the free
+# tier's shared CPU, and no request that starts a session needs it.
 import logging
 from datetime import UTC, datetime
-
-import yfinance as yf
 
 from app.services.market_data.base import (
     CandleDTO,
@@ -36,6 +37,8 @@ class YFinanceProvider(MarketDataProvider):
     name = "yfinance"
 
     def search(self, query: str, limit: int = 10) -> list[SearchResultDTO]:
+        import yfinance as yf
+
         try:
             results = yf.Search(query, max_results=limit).quotes
         except Exception as exc:  # noqa: BLE001 — vendor lib raises bare Exceptions
@@ -63,6 +66,8 @@ class YFinanceProvider(MarketDataProvider):
         return out
 
     def get_quote(self, ticker: str) -> QuoteDTO:
+        import yfinance as yf
+
         try:
             fi = yf.Ticker(ticker).fast_info
             last = fi.get("lastPrice") if isinstance(fi, dict) else fi.last_price
@@ -102,6 +107,8 @@ class YFinanceProvider(MarketDataProvider):
         )
 
     def get_candles(self, ticker: str, period: str, interval: str) -> list[CandleDTO]:
+        import yfinance as yf
+
         try:
             df = yf.Ticker(ticker).history(period=period, interval=interval, auto_adjust=False)
         except Exception as exc:  # noqa: BLE001
@@ -126,6 +133,8 @@ class YFinanceProvider(MarketDataProvider):
         return candles
 
     def get_metadata(self, ticker: str) -> MetadataDTO:
+        import yfinance as yf
+
         try:
             info = yf.Ticker(ticker).info
         except Exception as exc:  # noqa: BLE001
@@ -153,7 +162,6 @@ class YFinanceProvider(MarketDataProvider):
                 "market_cap": info.get("marketCap"),
             },
         )
-
 
     # --- candle-derived fallbacks -------------------------------------------
     # These exist so a refused quote/profile endpoint degrades to "yesterday's
@@ -210,6 +218,8 @@ class YFinanceProvider(MarketDataProvider):
         )
 
     def get_news(self, ticker: str, limit: int = 10) -> list[NewsItemDTO]:
+        import yfinance as yf
+
         try:
             raw = yf.Ticker(ticker).news or []
         except Exception as exc:  # noqa: BLE001
@@ -228,7 +238,8 @@ class YFinanceProvider(MarketDataProvider):
             items.append(
                 NewsItemDTO(
                     title=title,
-                    publisher=provider.get("displayName") if isinstance(provider, dict)
+                    publisher=provider.get("displayName")
+                    if isinstance(provider, dict)
                     else c.get("publisher"),
                     url=url,
                     published_at=_parse_news_time(c),

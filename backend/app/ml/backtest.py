@@ -15,7 +15,6 @@ from collections import Counter
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from app.ml.features import HORIZON_DAYS, make_training_matrix
 
@@ -29,6 +28,8 @@ class NotEnoughDataError(Exception):
 
 
 def _fit(X, yc, yr):
+    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+
     # Lighter forest than the served model — backtest refits many times.
     clf = RandomForestClassifier(
         n_estimators=60, max_depth=6, min_samples_leaf=15, random_state=42, n_jobs=-1
@@ -93,9 +94,7 @@ def _summarize(records: list[dict]) -> tuple[dict, dict]:
     # Baselines.
     majority = Counter(act_t).most_common(1)[0][0]
     baseline_acc = sum(a == majority for a in act_t) / n
-    persistence_acc = (
-        sum(act_t[i - 1] == act_t[i] for i in range(1, n)) / (n - 1) if n > 1 else 0.0
-    )
+    persistence_acc = sum(act_t[i - 1] == act_t[i] for i in range(1, n)) / (n - 1) if n > 1 else 0.0
 
     mae = float(np.mean(np.abs(pred_r - act_r)))
     rmse = float(np.sqrt(np.mean((pred_r - act_r) ** 2)))

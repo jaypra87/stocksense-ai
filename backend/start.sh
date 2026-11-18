@@ -19,13 +19,16 @@ alembic upgrade head
 if [ "${SKIP_BOOTSTRAP:-}" = "1" ]; then
   echo "[start] SKIP_BOOTSTRAP=1 — skipping demo data + model bootstrap"
 else
-  echo "[start] bootstrapping demo data + model in background…"
+  echo "[start] bootstrapping demo data + model in background (after a pause)…"
   # Non-fatal and off the critical path: a transient data-warm failure must
   # never block or delay the server. Niced so it yields CPU to real requests
-  # on small shared-core instances.
-  nice -n 10 python scripts/bootstrap.py \
+  # on small shared-core instances, and held back long enough for the first
+  # visitor's session calls to be answered before it starts importing pandas
+  # and pulling candles: on a 0.1-CPU box even a niced process slows the
+  # web worker's own start-up noticeably.
+  (sleep "${BOOTSTRAP_DELAY_SECONDS:-45}" && nice -n 10 python scripts/bootstrap.py \
     && echo "[start] bootstrap complete" \
-    || echo "[start] bootstrap warning (server unaffected)" &
+    || echo "[start] bootstrap warning (server unaffected)") &
 fi
 
 echo "[start] launching uvicorn on port ${PORT:-8000}…"

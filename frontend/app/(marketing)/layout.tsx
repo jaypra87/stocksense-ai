@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { WarmBackend } from "@/components/marketing/WarmBackend";
 import { Footer } from "@/components/shared/Footer";
 import { Logo } from "@/components/shared/Logo";
 
@@ -7,6 +8,7 @@ import { Logo } from "@/components/shared/Logo";
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
+      <WarmBackend />
       <header className="site-header sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur transition-opacity duration-300">
         <a
           href="#main"

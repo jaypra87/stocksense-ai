@@ -108,7 +108,7 @@ def test_metadata_degrades_to_a_bare_profile_when_info_is_blocked(
         def info(self) -> dict:
             raise RuntimeError("401 Unauthorized (crumb)")
 
-    monkeypatch.setattr("app.services.market_data.yfinance_provider.yf.Ticker", _Blocked)
+    monkeypatch.setattr("yfinance.Ticker", _Blocked)
 
     meta = p.get_metadata("NVDA")
     assert meta.ticker == "NVDA"
@@ -128,7 +128,7 @@ def test_metadata_still_raises_for_a_symbol_with_no_candles(
         def info(self) -> dict:
             raise RuntimeError("401 Unauthorized (crumb)")
 
-    monkeypatch.setattr("app.services.market_data.yfinance_provider.yf.Ticker", _Blocked)
+    monkeypatch.setattr("yfinance.Ticker", _Blocked)
 
     with pytest.raises(InvalidTickerError):
         p.get_metadata("NOTAREALTICKER")
@@ -160,7 +160,7 @@ def test_search_uses_the_offline_index_when_upstream_is_blocked(
     def _blocked(*a: object, **k: object) -> None:
         raise RuntimeError("429 Too Many Requests")
 
-    monkeypatch.setattr("app.services.market_data.yfinance_provider.yf.Search", _blocked)
+    monkeypatch.setattr("yfinance.Search", _blocked)
 
     results = YFinanceProvider().search("google", limit=5)
     assert "GOOGL" in [r.symbol for r in results]

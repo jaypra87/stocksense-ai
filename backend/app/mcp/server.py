@@ -13,6 +13,8 @@ the protocol layer sees it, and every tool runs under that user's row-level
 security context.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import uuid
@@ -20,13 +22,9 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import anyio
-import mcp.types as types
-from mcp.server.context import ServerRequestContext
-from mcp.server.lowlevel import Server
-from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
-from mcp.server.transport_security import TransportSecuritySettings
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.types import Receive, Scope, Send
@@ -40,6 +38,14 @@ from app.db.session import SessionLocal, set_rls_user
 from app.services.market_data.registry import get_provider
 from app.services.stockman import tools
 from app.services.stockman.tools import ToolContext, ToolError
+
+# The MCP SDK is imported when the app starts serving (see `lifespan`) and
+# inside the handlers, not at module load: it is a sizeable import tree and
+# nothing on the session bootstrap path needs it.
+if TYPE_CHECKING:
+    from mcp import types
+    from mcp.server.context import ServerRequestContext
+    from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 
 logger = logging.getLogger("stocksense.mcp")
 
@@ -59,10 +65,12 @@ _limiter = RateLimiter("mcp", 120, 300)
 async def _list_tools(
     ctx: ServerRequestContext, params: types.PaginatedRequestParams | None
 ) -> types.ListToolsResult:
-    return types.ListToolsResult(
+    from mcp import types as t
+
+    return t.ListToolsResult(
         tools=[
-            types.Tool(name=t["name"], description=t["description"], input_schema=t["input_schema"])
-            for t in tools.TOOL_DEFINITIONS
+            t.Tool(name=d["name"], description=d["description"], input_schema=d["input_schema"])
+            for d in tools.TOOL_DEFINITIONS
         ]
     )
 
@@ -70,6 +78,8 @@ async def _list_tools(
 async def _call_tool(
     ctx: ServerRequestContext, params: types.CallToolRequestParams
 ) -> types.CallToolResult:
+    from mcp import types as t
+
     user_id = _current_user.get()
     args = params.arguments or {}
 
@@ -87,22 +97,12 @@ async def _call_tool(
     try:
         payload = await anyio.to_thread.run_sync(run)
     except ToolError as exc:
-        return types.CallToolResult(
-            content=[types.TextContent(type="text", text=str(exc))], is_error=True
-        )
-    return types.CallToolResult(
-        content=[types.TextContent(type="text", text=json.dumps(payload, default=str))],
+        return t.CallToolResult(content=[t.TextContent(type="text", text=str(exc))], is_error=True)
+    return t.CallToolResult(
+        content=[t.TextContent(type="text", text=json.dumps(payload, default=str))],
         structured_content=payload,
     )
 
-
-server: Server = Server(
-    "stocksense",
-    version="0.1.0",
-    instructions=INSTRUCTIONS,
-    on_list_tools=_list_tools,
-    on_call_tool=_call_tool,
-)
 
 _manager: StreamableHTTPSessionManager | None = None
 
@@ -119,6 +119,17 @@ async def lifespan() -> AsyncIterator[None]:
     the way of the proxy.
     """
     global _manager
+    from mcp.server.lowlevel import Server
+    from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
+    from mcp.server.transport_security import TransportSecuritySettings
+
+    server: Server = Server(
+        "stocksense",
+        version="0.1.0",
+        instructions=INSTRUCTIONS,
+        on_list_tools=_list_tools,
+        on_call_tool=_call_tool,
+    )
     _manager = StreamableHTTPSessionManager(
         app=server,
         json_response=True,

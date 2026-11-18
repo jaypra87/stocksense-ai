@@ -8,13 +8,16 @@ per-token text and per-tool progress, and the final round must be forced to
 answer without tools.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from collections.abc import Iterator
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-import anthropic
-from anthropic.types import MessageParam, ToolParam
+if TYPE_CHECKING:
+    import anthropic
+    from anthropic.types import MessageParam, ToolParam
 
 from app.core.config import get_settings
 from app.services.stockman import grounding, tools
@@ -58,10 +61,10 @@ def run_turn(
                     "cache_control": {"type": "ephemeral"},
                 }
             ],
-            tools=cast(list[ToolParam], tools.TOOL_DEFINITIONS),
+            tools=cast("list[ToolParam]", tools.TOOL_DEFINITIONS),
             tool_choice={"type": "none"} if last_round else {"type": "auto"},
             output_config={"effort": "medium"},
-            messages=cast(list[MessageParam], messages),
+            messages=cast("list[MessageParam]", messages),
         ) as stream:
             for event in stream:
                 if event.type == "text":

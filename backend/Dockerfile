@@ -16,6 +16,10 @@ COPY pyproject.toml ./
 RUN pip install --upgrade pip && pip install -e .
 
 COPY . .
+# Bytecode for our own modules is written once here instead of recompiled on
+# every cold start (PYTHONDONTWRITEBYTECODE keeps the running container from
+# doing it, which matters on an ephemeral disk).
+RUN python -m compileall -q app alembic scripts
 
 # Run as a non-root user; it owns /app so the bootstrap step can write ML artifacts.
 RUN useradd --create-home --uid 1000 appuser && chown -R appuser:appuser /app
