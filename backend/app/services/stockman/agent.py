@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
@@ -26,8 +26,22 @@ from app.services.stockman.tools import ToolContext, ToolError
 
 logger = logging.getLogger(__name__)
 
-MAX_OUTPUT_TOKENS = 2048
+# Thinking tokens count against this on Haiku 5.5, so it is well above the
+# length of any answer the prompt allows.
+MAX_OUTPUT_TOKENS = 4096
+# A dropped stream or an overloaded API gets one more try per round.
+_ROUND_RETRIES = 1
 Event = tuple[str, dict[str, Any]]
+
+
+# Resolved on first use so the SDK import stays off the boot path.
+_RETRYABLE: tuple[type[BaseException], ...] = ()
+
+
+def _retryable() -> tuple[type[BaseException], ...]:
+    import anthropic
+
+    return (anthropic.APIConnectionError, anthropic.InternalServerError, anthropic.RateLimitError)
 
 
 def run_turn(
@@ -36,6 +50,9 @@ def run_turn(
     history: list[dict],
     user_text: str,
 ) -> Iterator[Event]:
+    global _RETRYABLE
+    if not _RETRYABLE:
+        _RETRYABLE = _retryable()
     settings = get_settings()
     messages: list[dict] = [*history, {"role": "user", "content": user_text}]
     # Turns to persist, in order. The user turn is saved by the caller before
@@ -50,27 +67,19 @@ def run_turn(
     while True:
         rounds += 1
         last_round = rounds >= settings.stockman_max_tool_rounds
-        text_parts: list[str] = []
-        with client.messages.stream(
-            model=settings.stockman_model,
-            max_tokens=MAX_OUTPUT_TOKENS,
-            system=[
-                {
-                    "type": "text",
-                    "text": SYSTEM_PROMPT,
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ],
-            tools=cast("list[ToolParam]", tools.TOOL_DEFINITIONS),
-            tool_choice={"type": "none"} if last_round else {"type": "auto"},
-            output_config={"effort": "medium"},
-            messages=cast("list[MessageParam]", messages),
-        ) as stream:
-            for event in stream:
-                if event.type == "text":
-                    text_parts.append(event.text)
-                    yield "text_delta", {"text": event.text}
-            message = stream.get_final_message()
+        attempt = 0
+        while True:
+            try:
+                text_parts, message = yield from _stream_round(
+                    client, settings, messages, last_round
+                )
+                break
+            except _RETRYABLE as exc:
+                attempt += 1
+                if attempt > _ROUND_RETRIES:
+                    raise
+                logger.warning("stockman: round failed (%s), retrying once", type(exc).__name__)
+                yield "text_reset", {}
 
         usage["input_tokens"] += message.usage.input_tokens
         usage["output_tokens"] += message.usage.output_tokens
@@ -126,7 +135,11 @@ def run_turn(
         if check["unmatched"] and not retried:
             retried = True
             logger.info("stockman: ungrounded figures %s, retrying", check["unmatched"])
+            # The draft is dropped from both the request and the record: the
+            # API only accepts a system message after a user turn, and a
+            # rewrite that cannot see its own invented figures is the point.
             transcript.pop()
+            messages.pop()
             messages.append(
                 {
                     "role": "system",
@@ -147,3 +160,32 @@ def run_turn(
             "rounds": rounds,
         },
     )
+
+
+def _stream_round(
+    client: anthropic.Anthropic, settings: Any, messages: list[dict], last_round: bool
+) -> Generator[Event, None, tuple[list[str], anthropic.types.Message]]:
+    """One model call, streamed: yields the text deltas as they arrive and
+    returns the collected text with the final message."""
+    text_parts: list[str] = []
+    with client.messages.stream(
+        model=settings.stockman_model,
+        max_tokens=MAX_OUTPUT_TOKENS,
+        system=[
+            {
+                "type": "text",
+                "text": SYSTEM_PROMPT,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ],
+        tools=cast("list[ToolParam]", tools.TOOL_DEFINITIONS),
+        tool_choice={"type": "none"} if last_round else {"type": "auto"},
+        output_config={"effort": "medium"},
+        messages=cast("list[MessageParam]", messages),
+    ) as stream:
+        for event in stream:
+            if event.type == "text":
+                text_parts.append(event.text)
+                yield "text_delta", {"text": event.text}
+        message = stream.get_final_message()
+    return text_parts, message

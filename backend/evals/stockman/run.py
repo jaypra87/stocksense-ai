@@ -11,6 +11,8 @@ Writes a JSON report next to this file and exits non-zero on any failure.
 """
 
 import json
+import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -69,6 +71,9 @@ def _tool_payloads(transcript: list[dict]) -> list[object]:
 
 
 def main(argv: list[str]) -> int:
+    # Show the retries and tool failures as they happen.
+    logging.basicConfig(level=logging.WARNING, format="%(message)s")
+    logging.getLogger("app.services.stockman").setLevel(logging.INFO)
     settings = get_settings()
     if not settings.stockman_enabled:
         print("ANTHROPIC_API_KEY is not set; nothing to run.")
@@ -88,7 +93,11 @@ def main(argv: list[str]) -> int:
     passed = 0
     try:
         for case in cases:
-            verdict, extra = run_case(case, client, user_id)
+            try:
+                verdict, extra = run_case(case, client, user_id)
+            except Exception as exc:  # noqa: BLE001 - one broken case must not end the run
+                verdict = Verdict(case_id=case["id"], passed=False, failures=[f"crashed: {exc}"])
+                extra = {"answer": "", "usage": None, "rounds": None, "seconds": None}
             passed += verdict.passed
             mark = "PASS" if verdict.passed else "FAIL"
             print(
@@ -115,4 +124,10 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    code = main(sys.argv[1:])
+    # Skip interpreter teardown: on an Intel Python under Rosetta a native
+    # finalizer in the SDK's JSON parser can hang the exit for minutes. The
+    # report is on disk and stdout is flushed, so nothing is lost.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(code)

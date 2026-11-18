@@ -75,6 +75,10 @@ export function useChat(conversationId: string | null, onCreated?: (id: string) 
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [busy, setBusy] = useState(false);
   const abort = useRef<AbortController | null>(null);
+  // When the last send finished. Stored turns fetched before that predate
+  // the answer and must not replace what is on screen; the refetch after the
+  // send lands later and carries everything.
+  const settledAt = useRef(0);
 
   const stored = useQuery({
     queryKey: ["stockman", "conversation", conversationId],
@@ -84,9 +88,13 @@ export function useChat(conversationId: string | null, onCreated?: (id: string) 
   });
 
   useEffect(() => {
-    if (conversationId == null) setTurns([]);
-    else if (stored.data) setTurns(toTurns(stored.data.messages));
-  }, [conversationId, stored.data]);
+    if (conversationId == null) {
+      setTurns([]);
+      settledAt.current = 0;
+    } else if (stored.data && !busy && stored.dataUpdatedAt > settledAt.current) {
+      setTurns(toTurns(stored.data.messages));
+    }
+  }, [conversationId, stored.data, stored.dataUpdatedAt, busy]);
 
   useEffect(() => () => abort.current?.abort(), []);
 
@@ -132,11 +140,13 @@ export function useChat(conversationId: string | null, onCreated?: (id: string) 
           abort.current.signal,
         );
         patch((turn) => ({ ...turn, streaming: false }));
+        settledAt.current = Date.now();
         // The server saved the real turns; next open reads them back.
         void qc.invalidateQueries({ queryKey: ["stockman", "conversation", id] });
         void qc.invalidateQueries({ queryKey: STATUS_KEY });
         void qc.invalidateQueries({ queryKey: LIST_KEY });
       } catch (err) {
+        settledAt.current = Date.now();
         if (!(err instanceof DOMException && err.name === "AbortError")) {
           patch((turn) => ({ ...turn, streaming: false, error: messageOf(err) }));
         }

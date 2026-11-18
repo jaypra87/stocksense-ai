@@ -6,6 +6,7 @@ so assertions are stable. Selected via MARKET_DATA_PROVIDER=fake.
 
 import random
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
 
 from app.services.market_data.base import (
     CandleDTO,
@@ -88,6 +89,41 @@ _NEWS_TEMPLATES = [
 ]
 
 
+@lru_cache(maxsize=64)
+def _series(ticker: str) -> list[CandleDTO]:
+    """One deterministic daily walk per ticker, long enough for every period."""
+    rng = random.Random(sum(ord(c) for c in ticker))
+    price = 50 + rng.random() * 200
+    # Floor to midnight UTC so repeated calls yield identical timestamps —
+    # otherwise the (ticker, interval, timestamp) upsert key never collides
+    # and we'd insert duplicate rows instead of updating in place.
+    now = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    step = timedelta(days=1)
+    n = max(_PERIOD_DAYS.values())
+
+    candles: list[CandleDTO] = []
+    for i in range(n):
+        ts = now - step * (n - i)
+        drift = rng.uniform(-0.025, 0.027)
+        open_ = price
+        close = max(1.0, price * (1 + drift))
+        high = max(open_, close) * (1 + rng.uniform(0, 0.012))
+        low = min(open_, close) * (1 - rng.uniform(0, 0.012))
+        candles.append(
+            CandleDTO(
+                timestamp=ts,
+                open=round(open_, 2),
+                high=round(high, 2),
+                low=round(low, 2),
+                close=round(close, 2),
+                adj_close=round(close, 2),
+                volume=rng.randint(1_000_000, 8_000_000),
+            )
+        )
+        price = close
+    return candles
+
+
 class FakeProvider(MarketDataProvider):
     name = "fake"
 
@@ -101,38 +137,19 @@ class FakeProvider(MarketDataProvider):
         return hits[:limit]
 
     def get_candles(self, ticker: str, period: str, interval: str) -> list[CandleDTO]:
+        """The last `period` of one fixed daily series per ticker.
+
+        One long walk is generated and sliced, so a 5-day quote and a 1-year
+        indicator window agree on every shared day. Generating a walk per
+        period used to leave the two at different prices, and the stored
+        candles for one date would flip between calls.
+        """
         n = _PERIOD_DAYS.get(period, 252)
         if interval == "1wk":
             n = n // 5  # ~5 trading days per week
-        rng = random.Random(sum(ord(c) for c in ticker.upper()))
-        price = 50 + rng.random() * 200
-        # Floor to midnight UTC so repeated calls yield identical timestamps —
-        # otherwise the (ticker, interval, timestamp) upsert key never collides
-        # and we'd insert duplicate rows instead of updating in place.
-        now = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        step = timedelta(weeks=1) if interval == "1wk" else timedelta(days=1)
-
-        candles: list[CandleDTO] = []
-        for i in range(n):
-            ts = now - step * (n - i)
-            drift = rng.uniform(-0.025, 0.027)
-            open_ = price
-            close = max(1.0, price * (1 + drift))
-            high = max(open_, close) * (1 + rng.uniform(0, 0.012))
-            low = min(open_, close) * (1 - rng.uniform(0, 0.012))
-            candles.append(
-                CandleDTO(
-                    timestamp=ts,
-                    open=round(open_, 2),
-                    high=round(high, 2),
-                    low=round(low, 2),
-                    close=round(close, 2),
-                    adj_close=round(close, 2),
-                    volume=rng.randint(1_000_000, 8_000_000),
-                )
-            )
-            price = close
-        return candles
+        series = _series(ticker.upper())
+        candles = series[::5] if interval == "1wk" else series
+        return candles[-n:]
 
     def get_quote(self, ticker: str) -> QuoteDTO:
         candles = self.get_candles(ticker, "5d", "1d")

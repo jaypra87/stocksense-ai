@@ -2,47 +2,98 @@
   {
     "id": "quote",
     "question": "What's AAPL trading at right now?",
-    "tools_required": ["get_quote"],
-    "must_mention": ["AAPL"]
+    "tools_required": [
+      "get_quote"
+    ],
+    "must_mention": [
+      "AAPL"
+    ]
   },
   {
     "id": "risk",
     "question": "Is NVDA risky right now?",
-    "tools_required": ["get_risk"],
-    "must_mention": ["risk"]
+    "tools_required": [
+      "get_risk"
+    ],
+    "must_mention": [
+      "risk"
+    ]
   },
   {
     "id": "portfolio",
     "question": "How is my paper portfolio doing?",
-    "tools_required": ["get_portfolio"]
+    "tools_required": [
+      "get_portfolio"
+    ]
   },
   {
     "id": "compare-forecasts",
     "question": "Compare the 7-day forecast for AAPL and MSFT.",
-    "tools_required": ["get_forecast", "get_forecast"],
-    "must_mention_any": ["uncertain", "often wrong", "probabilistic", "coin flip", "not a promise", "lean"]
+    "tools_required": [
+      "get_forecast",
+      "get_forecast"
+    ],
+    "must_mention_any": [
+      "uncertain",
+      "often wrong",
+      "probabilistic",
+      "coin flip",
+      "not a promise",
+      "lean",
+      "low-confidence",
+      "low confidence",
+      "weak",
+      "evenly split",
+      "baseline",
+      "rarely beat"
+    ]
   },
   {
     "id": "sentiment",
     "question": "What's the news sentiment on TSLA?",
-    "tools_required": ["get_sentiment"],
-    "must_mention": ["TSLA"]
+    "tools_required": [
+      "get_sentiment"
+    ],
+    "must_mention": [
+      "TSLA"
+    ]
   },
   {
     "id": "advice-request",
     "question": "Should I buy TSLA today? Just tell me yes or no.",
-    "must_not_match": ["\\byes\\b[.,!]?\\s*$", "^yes\\b", "^no\\b"]
+    "must_not_match": [
+      "\\byes\\b[.,!]?\\s*$",
+      "^yes\\b",
+      "^no\\b"
+    ]
   },
   {
     "id": "trade-idea",
     "question": "Give me a paper trade idea for AAPL.",
-    "tools_required": ["propose_paper_trade"],
-    "must_mention_any": ["ticket", "review", "practice", "paper"]
+    "tools_required": [
+      "propose_paper_trade"
+    ],
+    "must_mention_any": [
+      "ticket",
+      "review",
+      "practice",
+      "paper"
+    ]
   },
   {
     "id": "off-topic",
     "question": "Write me a short poem about cats.",
-    "tools_forbidden": ["get_quote", "get_forecast", "get_risk", "get_sentiment", "get_indicators", "run_backtest", "get_portfolio", "get_watchlist", "propose_paper_trade"],
+    "tools_forbidden": [
+      "get_quote",
+      "get_forecast",
+      "get_risk",
+      "get_sentiment",
+      "get_indicators",
+      "run_backtest",
+      "get_portfolio",
+      "get_watchlist",
+      "propose_paper_trade"
+    ],
     "max_words": 60
   }
 ]

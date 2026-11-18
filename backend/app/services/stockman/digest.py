@@ -34,7 +34,8 @@ logger = logging.getLogger(__name__)
 
 MAX_POSITIONS = 6
 MAX_FORECASTS = 3
-MAX_OUTPUT_TOKENS = 700
+# Thinking tokens count against this on Haiku 5.5; the prompt caps the prose.
+MAX_OUTPUT_TOKENS = 4096
 _LOCK_SECONDS = 90
 # With nothing in the portfolio or the watchlist, the digest covers the market.
 _DEFAULT_TICKERS = ["AAPL", "MSFT", "NVDA", "SPY"]
@@ -80,6 +81,11 @@ def generate(
         )
         body = "".join(b.text for b in response.content if b.type == "text").strip()
         if response.stop_reason == "refusal" or not body:
+            logger.warning(
+                "digest: no text (stop_reason=%s, output_tokens=%s)",
+                response.stop_reason,
+                response.usage.output_tokens,
+            )
             body = (
                 "Stock-man couldn't write a digest today. "
                 "The numbers are still on the portfolio page."

@@ -55,6 +55,17 @@ def test_counts_years_horizons_and_the_users_own_numbers_are_not_flagged() -> No
     assert check["unmatched"] == []
 
 
+def test_dates_with_thousands_style_commas_are_not_figures() -> None:
+    check = grounding.check("As of November 18, 2026 the quote was $151.86.", [{"price": 151.86}])
+    assert check == {"checked": 1, "unmatched": []}
+
+
+def test_a_difference_or_percent_change_of_two_results_counts_as_grounded() -> None:
+    results = [{"price": 161.85, "fifty_two_week_high": 163.76}]
+    answer = "NVDA is $1.91 below its 52-week high, about 1.2% under it."
+    assert grounding.check(answer, results)["unmatched"] == []
+
+
 def test_a_figure_far_from_any_result_does_not_match_by_tolerance() -> None:
     assert grounding.check("$160.00", [{"price": 151.86}])["unmatched"] == ["$160.00"]
 
@@ -227,14 +238,39 @@ def test_an_ungrounded_answer_is_retried_once_with_a_review_nudge(ctx) -> None:
     events = run(client, ctx, "Where is AAPL going?")
     kinds = [k for k, _ in events]
     assert kinds.count("text_reset") == 1
-    nudge = client.requests[2]["messages"][-1]
+    replayed = client.requests[2]["messages"]
+    nudge = replayed[-1]
     assert nudge["role"] == "system" and "$999.99" in nudge["content"]
+    # The nudge follows the tool-result user turn; the draft itself is gone.
+    assert replayed[-2]["role"] == "user"
+    assert all("$999.99" not in json.dumps(m["content"]) for m in replayed[:-1])
 
     done = events[-1][1]
     assert done["grounding"]["unmatched"] == []
     assert done["answer"].startswith("I can't give a target")
     # The superseded answer is not part of what gets saved.
     assert all("$999.99" not in json.dumps(t) for t in done["transcript"])
+
+
+def test_a_dropped_stream_is_retried_once(ctx) -> None:
+    import anthropic
+    import httpx2
+
+    class Flaky(FakeClient):
+        def __init__(self, turns):
+            super().__init__(turns)
+            self.failed = False
+
+        def _stream(self, **kwargs):
+            if not self.failed:
+                self.failed = True
+                raise anthropic.APIConnectionError(request=httpx2.Request("POST", "http://api"))
+            return super()._stream(**kwargs)
+
+    client = Flaky([([text("Second try worked.")], "end_turn")])
+    events = run(client, ctx, "AAPL?")
+    assert ("text_reset", {}) in events
+    assert events[-1][1]["answer"] == "Second try worked."
 
 
 def test_a_refusal_becomes_a_polite_fixed_reply(ctx) -> None:
