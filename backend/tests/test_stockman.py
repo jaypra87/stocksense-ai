@@ -213,7 +213,7 @@ def test_a_tool_round_is_executed_and_replayed_before_the_answer(ctx) -> None:
 
     done = events[-1][1]
     assert [t["role"] for t in done["transcript"]] == ["assistant", "user", "assistant"]
-    assert done["usage"] == {"input_tokens": 200, "output_tokens": 40}
+    assert done["usage"] == {"input_tokens": 200, "output_tokens": 40, "cache_read_input_tokens": 0}
 
 
 def test_an_ungrounded_answer_is_retried_once_with_a_review_nudge(ctx) -> None:

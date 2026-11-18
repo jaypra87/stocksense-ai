@@ -42,7 +42,7 @@ def run_turn(
     # streaming starts; a superseded answer never reaches this list.
     transcript: list[dict] = []
     results_seen: list[object] = []
-    usage = {"input_tokens": 0, "output_tokens": 0}
+    usage = {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0}
     retried = False
     rounds = 0
     answer = ""
@@ -74,6 +74,11 @@ def run_turn(
 
         usage["input_tokens"] += message.usage.input_tokens
         usage["output_tokens"] += message.usage.output_tokens
+        # Reported, not estimated: a zero here across turns means the cached
+        # prefix (system prompt + tools) is being invalidated somewhere.
+        usage["cache_read_input_tokens"] += (
+            getattr(message.usage, "cache_read_input_tokens", 0) or 0
+        )
         blocks = [b.model_dump(mode="json", exclude_none=True) for b in message.content]
         answer = "".join(text_parts)
 

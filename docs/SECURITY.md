@@ -13,7 +13,7 @@ How each item on the project's security checklist is met, and where to look.
 | Hide API keys | Done | No key reaches a browser. The backend address itself is server-side (`BACKEND_URL`); the browser only talks to `/api/v1` on the site's own origin via `frontend/app/api/v1/[...path]/route.ts`. Provider keys live in backend env vars. The only `NEXT_PUBLIC_` values are the demo flag and the Turnstile *site* key, which is public by design. |
 | Purge Git secrets | Done | No `.env` has ever been committed (full-history scan clean). `scripts/check-secrets.sh --history` runs in CI on every push; `.gitignore` blocks every `.env*` variant, keys and service-account JSON. |
 | Use public DB keys | N/A | There is no client-side database access (this is not a Supabase/Firebase app). The browser never holds a database credential of any kind; the API is the only path to Postgres. |
-| Enable row level security | Done | Postgres policies on `users`, `sessions`, `watchlists`, `alerts`, `alert_events`, `backtests` with `FORCE ROW LEVEL SECURITY`; the request's user id is set per transaction (`app/db/session.py`). `tests/test_rls.py`. |
+| Enable row level security | Done | Postgres policies on `users`, `sessions`, `watchlists`, `alerts`, `alert_events`, `backtests`, `portfolios`, `positions`, `trades`, `conversations`, `conversation_messages`, `digests` with `FORCE ROW LEVEL SECURITY`; the request's user id is set per transaction (`app/db/session.py`). `tests/test_rls.py`. |
 | Encrypt sensitive data | Done | Emails are AES-256-GCM encrypted at the application layer with a keyed hash for lookup (`app/core/crypto.py`); passwords are bcrypt hashes; TLS to Postgres is enforced in production; disks are encrypted by the providers. |
 | Enforce server-side auth | Done | Every data router declares `Depends(get_current_user)` at router level. The browser guard is a convenience. `tests/test_access_control.py` fails if a new route ships unclassified. |
 | Lock record access | Done | Ownership comes from the session, never the request; services scope every query by `user_id`, and RLS enforces the same at the database. |
@@ -84,6 +84,8 @@ is unreachable an in-process window takes over rather than failing open.
 | `POST /auth/signup` | 5 / hour |
 | `POST /predictions/*` | 60 / 5 min |
 | `POST /backtests/*` | 20 / 5 min |
+| `POST /stockman/conversations/*/messages`, `POST /stockman/digest/refresh` | 30 / 5 min, plus daily token budgets per user and per deployment |
+| `/mcp` tool calls | 120 / 5 min |
 
 **Client IP.** The trusted source, in order: `X-Client-IP` from the frontend
 proxy when its `X-Proxy-Secret` matches (Vercel overwrites `X-Forwarded-For`
@@ -94,6 +96,27 @@ otherwise the rightmost *public* `X-Forwarded-For` entry, skipping the
 private hops the balancer appends after the client; otherwise the socket peer.
 The leftmost entry is never used — it is whatever the client typed.
 `/health/deep` returns `proxy` and `client` so this can be checked from outside.
+
+## Stock-man and the model API
+
+- **The model holds no credentials and no privileges.** It can only call the
+  nine tools in `app/services/stockman/tools.py`, all read-only except
+  `propose_paper_trade`, which returns a draft and executes nothing. There is
+  no path from the model to a trade, an account change or the network.
+- **Tool results are untrusted input.** Headlines come from third parties and
+  may try to instruct the model. The tool surface above is what bounds the
+  damage; a server-side grounding check and an eval set catch the shape of a
+  hijacked answer.
+- **The API key never leaves the server**, and an unset key makes the feature
+  report itself offline rather than fail.
+- **Spend is bounded** by a per-IP message limit and two daily token budgets
+  counted from the usage the API reports (`STOCKMAN_*_DAILY_TOKENS`).
+- **Conversations are user-owned rows under RLS**, like everything else, and
+  are deleted with the user.
+- **MCP tokens are sessions.** `POST /auth/mcp-token` mints a separate session
+  row ("MCP connector") that appears in the session list and is revoked by
+  "sign out everywhere". `/mcp` checks the token the way the API does and
+  runs every call under the holder's RLS context.
 
 ## Data protection
 
@@ -131,3 +154,4 @@ The leftmost entry is never used — it is whatever the client typed.
 - **The demo account's credentials are published** in the README; treat
   anything stored in it as public.
 - **The in-process rate-limit fallback is per instance** and resets on restart.
+- **Token budgets fail open when Redis is down.** They are cost control, not access control; the per-IP limit's in-process fallback still applies.

@@ -22,6 +22,10 @@ Retail investors and students are handed either black-box "buy/sell" signals wit
 - **Watchlists & alerts** — saved tickers, alert rules, scheduled checks, triggered history.
 - **Backtesting** — walk-forward, no-lookahead, vs. naive baselines, with an equity curve.
 - **Model transparency** — data sources, feature list, model metrics, limitations, disclaimer.
+- **Paper portfolio** — $100,000 of simulated money, fractional shares, fills at the live quote, an auditable trade ledger, P&L and allocation.
+- **Stock-man** — a chat analyst that answers only through tool calls over the app's own services, shows which tool produced each number, and drafts paper trades it cannot place. A server-side grounding check flags any figure it cannot trace.
+- **Daily digest** — a short note on your portfolio, written by Stock-man from the same tools on the first visit of the day.
+- **MCP server** — the same tools for Claude Desktop, Claude Code or any MCP client, with a token you mint in settings.
 
 ## Architecture
 
@@ -32,7 +36,8 @@ Retail investors and students are handed either black-box "buy/sell" signals wit
    ┌───────────────┐        ┌──────────────────────────┐
    │ Next.js (Vercel)│ ─────►│  FastAPI backend         │
    │ App Router + TS │  REST │  thin routers → services │
-   └───────────────┘        │  ML inference (sklearn)  │
+   └───────────────┘  SSE   │  ML inference (sklearn)  │
+   MCP clients ──────────► │  Stock-man agent + /mcp  │──► Claude API
                             └───────┬───────────┬──────┘
                                     │           │
                             ┌───────▼──┐   ┌────▼─────┐
@@ -62,6 +67,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full breakdown.
 | Database | PostgreSQL with row-level security; emails encrypted at rest (AES-GCM) |
 | Cache / jobs | Redis, Celery (worker + beat) |
 | ML | pandas, NumPy, scikit-learn (RandomForest) |
+| AI analyst | Anthropic SDK (Claude Haiku 5.5), hand-written tool loop, grounding check, MCP SDK |
 | Auth | Silent guest sessions (httpOnly cookie, DB-backed, revocable) + optional email/password account; bcrypt; Cloudflare Turnstile |
 | Deploy | Vercel (frontend) + Render/Fly (backend, Dockerized) |
 
@@ -108,6 +114,10 @@ MARKET_DATA_PROVIDER=fake celery -A app.workers.celery_app beat   --loglevel=inf
 **No login needed.** Opening the dashboard starts a guest session automatically; "Save account" in the header turns it into an account.
 The seeded demo account (`demo@stocksense.ai` / `demopassword123`) still exists for the sign-in flow.
 
+### Stock-man (optional)
+
+Set `ANTHROPIC_API_KEY` in `backend/.env` to turn on the chat analyst, the daily digest and the MCP server. Without it they report themselves offline and the rest of the app is unaffected. Daily token budgets (`STOCKMAN_USER_DAILY_TOKENS`, `STOCKMAN_GLOBAL_DAILY_TOKENS`) bound the bill. See [docs/STOCKMAN.md](docs/STOCKMAN.md).
+
 ### Market data providers
 
 Set `MARKET_DATA_PROVIDER` in `backend/.env`:
@@ -126,12 +136,17 @@ Two `RandomForest` models per horizon (1d/7d/30d): a **classifier** for trend di
 
 **Why predictions are uncertain (and often wrong):** markets are near-efficient; short-horizon direction is close to a coin flip. On synthetic random-walk data the models correctly fail to beat baselines. This honesty *is the product* — see the in-app Model Transparency page and [docs/ML_METHODOLOGY.md](docs/ML_METHODOLOGY.md).
 
+## How Stock-man stays honest
+
+Every figure in an answer comes from a tool call over the app's own services, and a grounding check on the server matches the answer's numbers back to those results, retrying once and flagging what it cannot trace. Stock-man cannot place a trade: a trade idea is a draft the person confirms in the same ticket they would use themselves. Spend is bounded by per-IP and per-day token budgets counted from reported usage, and an eval set holds answers to the tools they must call and the phrasings they must avoid. [docs/STOCKMAN.md](docs/STOCKMAN.md) has the details, including the MCP connection.
+
 ## Testing
 
 ```bash
 cd backend && source .venv/bin/activate
-pytest            # unit + API tests (indicators, ML features, risk, sentiment, auth, backtest, …)
+pytest            # unit + API tests (indicators, ML, risk, sentiment, auth, portfolio, Stock-man, MCP, …)
 ruff check app/   # lint
+python -m evals.stockman.run   # Stock-man evals against the real model (opt-in, needs a key)
 ```
 
 ```bash
@@ -143,9 +158,9 @@ npm run typecheck && npm run build
 
 ```
 stocksense/
-├── backend/    FastAPI app, services, ML, Celery workers, Alembic migrations, tests
+├── backend/    FastAPI app, services, ML, Stock-man agent + MCP server, Alembic migrations, tests, evals
 ├── frontend/   Next.js App Router, components, hooks, typed API client
-├── docs/       ARCHITECTURE.md, ML_METHODOLOGY.md, DEPLOYMENT.md
+├── docs/       ARCHITECTURE.md, ML_METHODOLOGY.md, STOCKMAN.md, SECURITY.md, DEPLOYMENT.md
 └── docker-compose.yml
 ```
 
@@ -160,6 +175,8 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — Dockerized backend on Render/Fl
 - yfinance is rate-limited and unofficial; production should use a paid provider.
 - Guest sessions are per browser: clearing cookies (or 30 days away) loses a guest's watchlist unless they save an account.
 - Bot protection (Turnstile) is off until its keys are configured; rate limits still apply. See [docs/SECURITY.md](docs/SECURITY.md).
+- Stock-man's grounding check is a check, not a proof: it matches figures to tool results and cannot judge words. The eval set covers the words. Its answers come from models that are often wrong.
+- The paper portfolio fills at delayed quotes and ignores fees, slippage and market hours.
 
 ## Disclaimer
 

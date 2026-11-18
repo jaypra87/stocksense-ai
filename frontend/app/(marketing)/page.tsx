@@ -1,7 +1,9 @@
 import {
   ArrowRight,
   Bell,
+  Bot,
   BrainCircuit,
+  Briefcase,
   CandlestickChart,
   FlaskConical,
   Gauge,
@@ -96,6 +98,18 @@ const FEATURES = [
     description:
       "Walk-forward backtests with no lookahead, measured against naive baselines. You see the losing runs as well as the winning ones.",
   },
+  {
+    Icon: Briefcase,
+    title: "Paper trading",
+    description:
+      "Practise with $100,000 of simulated money. Fractional shares, fills at the live quote, and a ledger that shows every trade.",
+  },
+  {
+    Icon: Bot,
+    title: "Stock-man, an analyst with receipts",
+    description:
+      "Ask about any stock or your portfolio. Every number comes from a tool call you can open, and he drafts trades he cannot place.",
+  },
 ];
 
 const FORMULAS = [
@@ -111,7 +125,11 @@ const FORMULAS = [
   },
   {
     title: "Confidence",
-    body: <>confidence = max<sub>c</sub> p̂(c | x)</>,
+    body: (
+      <>
+        confidence = max<sub>c</sub> p̂(c | x)
+      </>
+    ),
     caption:
       "The share of the forest's 200 trees that voted for the winning class. A confidence of 0.63 means 126 trees agreed and 74 did not. It appears on every forecast because it is part of the answer.",
   },
@@ -236,7 +254,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section id="hero" className="scroll-mt-14 border-b border-border">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 md:py-24 lg:grid-cols-[46fr_54fr]">
-          <div className="min-w-0 animate-fade-up space-y-6">
+          <div className="animate-fade-up min-w-0 space-y-6">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Market analytics with the uncertainty included
             </p>
@@ -244,8 +262,8 @@ export default function LandingPage() {
               Stock forecasts that show their work.
             </h1>
             <p className="max-w-xl text-lg text-muted-foreground">
-              Every forecast comes with a confidence score, an expected range, the factors behind
-              it and a backtest you can run yourself.
+              Every forecast comes with a confidence score, an expected range, the factors behind it
+              and a backtest you can run yourself.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <Link
@@ -271,7 +289,7 @@ export default function LandingPage() {
             </p>
           </div>
           {/* min-w-0 keeps the card from widening the page on narrow screens. */}
-          <div className="min-w-0 animate-fade-up [animation-delay:150ms]">
+          <div className="animate-fade-up min-w-0 [animation-delay:150ms]">
             <ForecastPreview />
           </div>
         </div>
@@ -309,7 +327,10 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section aria-labelledby="steps-heading" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+      <section
+        aria-labelledby="steps-heading"
+        className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20"
+      >
         <Reveal className="mb-12 max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             How it works
@@ -348,7 +369,10 @@ export default function LandingPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               What&apos;s inside
             </p>
-            <h2 id="features-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2
+              id="features-heading"
+              className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl"
+            >
               The data, the reasoning and the uncertainty behind every number.
             </h2>
           </Reveal>
@@ -364,7 +388,9 @@ export default function LandingPage() {
                   aria-hidden
                 />
                 <h3 className="mt-4 font-semibold">{title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{description}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  {description}
+                </p>
               </Reveal>
             ))}
           </div>
@@ -372,7 +398,11 @@ export default function LandingPage() {
       </section>
 
       {/* Model & math */}
-      <section aria-labelledby="model-heading" id="model" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 md:py-20">
+      <section
+        aria-labelledby="model-heading"
+        id="model"
+        className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 md:py-20"
+      >
         <Reveal className="mb-12 max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Under the hood
@@ -381,8 +411,8 @@ export default function LandingPage() {
             The model, the maths and where it fails.
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Nothing here is hidden. These are the algorithm, the formulas and the validation
-            steps used in the codebase.
+            Nothing here is hidden. These are the algorithm, the formulas and the validation steps
+            used in the codebase.
           </p>
         </Reveal>
 
@@ -396,20 +426,22 @@ export default function LandingPage() {
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               200 decision trees (depth of at most 8, at least 20 samples per leaf) vote bullish,
               neutral or bearish. The winning class becomes the trend call, and the share of trees
-              that voted for it becomes the confidence score, so 63% confident means 126 of the
-              200 trees agreed. One forest is trained per horizon on data pooled across tickers.
+              that voted for it becomes the confidence score, so 63% confident means 126 of the 200
+              trees agreed. One forest is trained per horizon on data pooled across tickers.
             </p>
           </Reveal>
-          <Reveal delay={90} className="hover-lift rounded-lg border border-border bg-card p-7 hover:border-accent/40">
+          <Reveal
+            delay={90}
+            className="hover-lift rounded-lg border border-border bg-card p-7 hover:border-accent/40"
+          >
             <p className="font-mono text-xs font-semibold uppercase tracking-wide text-accent">
               Magnitude
             </p>
             <h3 className="mt-2 text-lg font-semibold">Random-forest regressor</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               A second forest estimates the forward return itself. Its point estimate sets the
-              middle of the expected price range, and the disagreement between individual trees
-              sets the width. A calm consensus gives a tight band and a split forest gives a wide
-              one.
+              middle of the expected price range, and the disagreement between individual trees sets
+              the width. A calm consensus gives a tight band and a split forest gives a wide one.
             </p>
           </Reveal>
         </div>
@@ -436,8 +468,8 @@ export default function LandingPage() {
           <Reveal className="rounded-lg border border-border bg-card p-7">
             <h3 className="font-semibold">How the risk score is weighted</h3>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              These are the weights used by the risk engine. They sum to 1 and are renormalised
-              when a factor is unavailable.
+              These are the weights used by the risk engine. They sum to 1 and are renormalised when
+              a factor is unavailable.
             </p>
             <ul className="mt-5 space-y-3.5">
               {RISK_WEIGHTS.map(({ label, weight }) => (
@@ -448,7 +480,10 @@ export default function LandingPage() {
                       {weight}%
                     </span>
                   </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted" role="presentation">
+                  <div
+                    className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted"
+                    role="presentation"
+                  >
                     <div
                       className="h-full rounded-full bg-accent"
                       style={{ width: `${weight * 4}%` }}
@@ -483,7 +518,9 @@ export default function LandingPage() {
 
         {/* Validation */}
         <Reveal className="mt-6 rounded-lg border border-border bg-card p-7">
-          <h3 className="font-semibold">How accuracy is measured, and why there is no big number here</h3>
+          <h3 className="font-semibold">
+            How accuracy is measured, and why there is no big number here
+          </h3>
           <div className="mt-5 grid gap-x-10 gap-y-6 md:grid-cols-2">
             {VALIDATION_POINTS.map(({ title, description }) => (
               <div key={title}>
@@ -506,13 +543,20 @@ export default function LandingPage() {
       </section>
 
       {/* Security */}
-      <section aria-labelledby="security-heading" id="security" className="scroll-mt-20 border-y border-border bg-card/40">
+      <section
+        aria-labelledby="security-heading"
+        id="security"
+        className="scroll-mt-20 border-y border-border bg-card/40"
+      >
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
           <Reveal className="mb-12 max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Security
             </p>
-            <h2 id="security-heading" className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">
+            <h2
+              id="security-heading"
+              className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl"
+            >
               Plain, verifiable security.
             </h2>
             <p className="mt-3 text-muted-foreground">
@@ -546,6 +590,12 @@ export default function LandingPage() {
                   "StockSense is read-only market analytics. It never connects to a broker or touches your money.",
               },
               {
+                Icon: Bot,
+                title: "An analyst that cannot trade",
+                description:
+                  "Stock-man can only call read-only tools. A trade idea is a draft you confirm by hand, and a server-side check flags any figure it cannot trace.",
+              },
+              {
                 Icon: Terminal,
                 title: "Hardened headers",
                 description:
@@ -568,7 +618,9 @@ export default function LandingPage() {
                 </span>
                 <div>
                   <h3 className="text-sm font-semibold">{title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    {description}
+                  </p>
                 </div>
               </Reveal>
             ))}
@@ -577,7 +629,10 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section aria-labelledby="faq-heading" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20">
+      <section
+        aria-labelledby="faq-heading"
+        className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-20"
+      >
         <Reveal className="mb-10 max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             Questions
@@ -609,9 +664,7 @@ export default function LandingPage() {
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
               See what the model knows, and what it does not.
             </h2>
-            <p className="mt-2 text-muted-foreground">
-              Free to use and open about its limits.
-            </p>
+            <p className="mt-2 text-muted-foreground">Free to use and open about its limits.</p>
           </Reveal>
           <Reveal delay={100} className="flex flex-wrap gap-3">
             <Link

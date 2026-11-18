@@ -59,6 +59,24 @@ POST /predictions/{ticker}?horizon=7d
   → PredictionOut (+ disclaimer)
 ```
 
+## Data flow: a Stock-man turn
+
+```
+POST /stockman/conversations/{id}/messages   (SSE)
+  → load the thread's stored content blocks
+  → agent.run_turn
+     → stream one model call (system prompt + tools cached as the prefix)
+     → for each tool_use: tools.run → existing service → trimmed payload
+     → replay assistant blocks + tool_result blocks, call again
+     → final text; last allowed round forces tool_choice = none
+     → grounding.check; one retry with a system nudge if a figure is untraceable
+  → persist the turns, charge the day's token budget from reported usage
+```
+
+The MCP server (`app/mcp/server.py`) exposes the same `tools.run` over the
+streamable HTTP transport at `/mcp`, authenticated by a session bearer token
+and run under that user's RLS context. See [STOCKMAN.md](STOCKMAN.md).
+
 ## Scheduled jobs
 
 Celery beat triggers `check_alerts` every 60s → `alert_service.evaluate_alerts`:
@@ -67,8 +85,9 @@ records an `AlertEvent` (with a 6h cooldown per alert).
 
 ## Database schema (tables)
 
-`users`, `stocks`, `price_candles` (composite PK), `technical_indicators`,
+`users`, `sessions`, `stocks`, `price_candles` (composite PK), `technical_indicators`,
 `predictions`, `risk_snapshots`, `sentiment_snapshots`, `watchlists` (composite PK),
-`alerts`, `alert_events`, `backtests`, `model_artifacts`.
+`alerts`, `alert_events`, `backtests`, `model_artifacts`, `portfolios`, `positions`,
+`trades` (append-only ledger), `conversations`, `conversation_messages`, `digests`.
 
 Migrations are managed by Alembic (`backend/alembic/versions/`).

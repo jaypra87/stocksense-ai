@@ -41,7 +41,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["app*"]
+include = ["app*", "evals*"]
 
 [tool.ruff]
 line-length = 100
@@ -57,6 +57,9 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+# Live model evals spend money; run them on purpose with `pytest -m live`.
+addopts = "-m 'not live'"
+markers = ["live: calls the real model API (needs ANTHROPIC_API_KEY, costs tokens)"]
 
 [tool.mypy]
 python_version = "3.11"

@@ -43,6 +43,10 @@ runs migrations → binds the port → bootstraps a demo user + trained model
      service with Cloudflare, which stamps the real client address into that
      header; without it, requests that bypass the frontend proxy are all
      charged to Cloudflare's own address, so they share one rate-limit bucket.
+   - `ANTHROPIC_API_KEY` → for Stock-man (chat analyst, daily digest, MCP server).
+     Optional; without it those features report themselves offline. The account
+     needs credits: an empty balance shows up in the chat as "out of credits".
+     `STOCKMAN_USER_DAILY_TOKENS` / `STOCKMAN_GLOBAL_DAILY_TOKENS` bound the bill.
    - (`JWT_SECRET` is auto-generated; `MARKET_DATA_PROVIDER`, `BCRYPT_ROUNDS` and
      `ENVIRONMENT=production` are preset.)
 3. Deploy. Health check: `/api/v1/health`.
@@ -50,9 +54,14 @@ runs migrations → binds the port → bootstraps a demo user + trained model
 
 > Render's free web service spins down after ~15 min idle, so the first request
 > after idle waits for a container start. The entrypoint only blocks on
-> migrations before serving — the demo-data warm and model check run in the
-> background — so that wait is the platform's, not the app's. Set
-> `SKIP_BOOTSTRAP=1` to skip the background work entirely.
+> migrations before serving; the demo-data warm and model check run in the
+> background after a pause (`BOOTSTRAP_DELAY_SECONDS`, default 45) so the
+> first visitor's requests are answered first. The heavy libraries
+> (scikit-learn, yfinance, the model and MCP SDKs) are imported on first use,
+> not at boot, and the image precompiles the app's bytecode. The frontend
+> retries through the wake and shows progress. What remains is the platform's
+> own spin-up; see step 7. Set `SKIP_BOOTSTRAP=1` to skip the background work
+> entirely.
 >
 > The container's disk is ephemeral, so every wake would lose the trained model
 > files. Each registry row therefore keeps a copy of its bundle (`blob` column);
@@ -127,11 +136,19 @@ browser.
 
 ## 7. Keep the free backend awake (recommended)
 
-`.github/workflows/keepalive.yml` pings the API every 10 minutes. In the GitHub
-repo: **Settings → Secrets and variables → Actions → Variables** → add
-`HEALTH_URL` = `https://<vercel-domain>/api/v1/health`. Going through Vercel
-warms both hops. GitHub can delay scheduled jobs, so this shortens cold starts
-dramatically without promising zero.
+Render sleeps the service after ~15 minutes without a request, so anything that
+fetches the health URL more often than that keeps it warm. In practice the
+GitHub Actions schedule in `.github/workflows/keepalive.yml` fired only a
+couple of times a day (scheduled jobs are best-effort), so use an external
+pinger instead:
+
+- **Upstash QStash** (the project already uses Upstash for Redis): create a
+  schedule with cron `*/14 * * * *` and destination
+  `https://<vercel-domain>/api/v1/health/deep`. The free tier's daily message
+  allowance covers it.
+- Or **cron-job.org** / **UptimeRobot** with the same URL every 5 to 14 minutes.
+
+Going through the Vercel URL warms both hops.
 
 ## 5. Verify
 
@@ -179,4 +196,5 @@ docker compose up --build
       (restored from the database) rather than a fresh `boot-…` version per wake.
 - [ ] `BACKEND_URL` on Vercel points at the Render service root (no `/api/v1`).
 - [ ] Turnstile keys set on both sides (`TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`).
-- [ ] GitHub repository variable `HEALTH_URL` set so the keep-alive workflow runs.
+- [ ] An external pinger hits `/api/v1/health/deep` through Vercel at least every 14 minutes.
+- [ ] `ANTHROPIC_API_KEY` set on Render with credits on the account, if Stock-man should be on; `/api/v1/stockman/status` reports `enabled: true`.

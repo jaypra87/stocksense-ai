@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Database, Layers, ListChecks } from "lucide-react";
+import { AlertTriangle, Bot, Database, Layers, ListChecks } from "lucide-react";
 
 import { BackToDashboard } from "@/components/shared/BackToDashboard";
 import { Badge } from "@/components/ui/Badge";
@@ -79,11 +79,21 @@ export default function TransparencyPage() {
               </caption>
               <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
-                  <th scope="col" className="py-1.5 pr-4 font-semibold">Version</th>
-                  <th scope="col" className="py-1.5 pr-4 font-semibold">Horizon</th>
-                  <th scope="col" className="py-1.5 pr-4 font-semibold">Accuracy</th>
-                  <th scope="col" className="py-1.5 pr-4 font-semibold">Baseline</th>
-                  <th scope="col" className="py-1.5 pr-4 font-semibold">Status</th>
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">
+                    Version
+                  </th>
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">
+                    Horizon
+                  </th>
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">
+                    Accuracy
+                  </th>
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">
+                    Baseline
+                  </th>
+                  <th scope="col" className="py-1.5 pr-4 font-semibold">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -129,6 +139,25 @@ export default function TransparencyPage() {
             </div>
           ))}
         </div>
+      </Card>
+
+      <Card className="space-y-3">
+        <CardTitle className="flex items-center gap-2">
+          <Bot className="h-4 w-4 text-accent" aria-hidden /> Stock-man
+        </CardTitle>
+        <ul className="space-y-1.5 text-sm text-muted-foreground">
+          {[
+            "Every number in an answer comes from a tool call over the data and models on this page. The tool chips under an answer open to the raw result.",
+            "A server-side check matches the figures in an answer back to those tool results, retries once, and flags anything it cannot trace.",
+            "Stock-man cannot place a trade. A trade idea is a draft you review in the same ticket you would use yourself, with practice money.",
+            "Answers come from these models, which are often wrong. Nothing Stock-man says is financial advice.",
+          ].map((line) => (
+            <li key={line} className="flex gap-2">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" aria-hidden />
+              {line}
+            </li>
+          ))}
+        </ul>
       </Card>
 
       <Card className="space-y-3 border-warning/40">
