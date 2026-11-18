@@ -83,3 +83,20 @@ export interface ChatTurn {
   error?: string;
   grounding?: Grounding;
 }
+
+export interface DigestSource {
+  tool: string;
+  ticker?: string | null;
+}
+
+export interface Digest {
+  available: boolean;
+  reason?: string | null;
+  for_date?: string | null;
+  mode?: "portfolio" | "market" | null;
+  body?: string | null;
+  sources: DigestSource[];
+  grounding: Partial<Grounding>;
+  generated_at?: string | null;
+  disclaimer: string;
+}

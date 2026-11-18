@@ -3,6 +3,7 @@
 from app.db.models.alert import Alert, AlertEvent
 from app.db.models.backtest import Backtest
 from app.db.models.conversation import Conversation, ConversationMessage
+from app.db.models.digest import Digest
 from app.db.models.model_artifact import ModelArtifact
 from app.db.models.portfolio import Portfolio, Position, Trade
 from app.db.models.prediction import Prediction
@@ -21,6 +22,7 @@ __all__ = [
     "Backtest",
     "Conversation",
     "ConversationMessage",
+    "Digest",
     "ModelArtifact",
     "Portfolio",
     "Position",

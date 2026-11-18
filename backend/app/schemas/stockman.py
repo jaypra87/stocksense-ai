@@ -42,3 +42,21 @@ class StatusOut(BaseModel):
     model: str
     budget: BudgetOut
     disclaimer: str
+
+
+class DigestSource(BaseModel):
+    tool: str
+    ticker: str | None = None
+
+
+class DigestOut(BaseModel):
+    available: bool
+    # Why there is no digest, when `available` is false.
+    reason: str | None = None
+    for_date: str | None = None
+    mode: str | None = None
+    body: str | None = None
+    sources: list[DigestSource] = []
+    grounding: dict = {}
+    generated_at: str | None = None
+    disclaimer: str

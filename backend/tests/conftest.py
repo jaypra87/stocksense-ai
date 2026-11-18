@@ -26,8 +26,14 @@ class InMemoryRedis:
     def get(self, key: str) -> str | None:
         return self.store.get(key)
 
-    def set(self, key: str, value: str, ex: int | None = None) -> None:
+    def set(self, key: str, value: str, ex: int | None = None, nx: bool = False) -> bool:
+        if nx and key in self.store:
+            return False
         self.store[key] = value
+        return True
+
+    def delete(self, key: str) -> None:
+        self.store.pop(key, None)
 
     def incr(self, key: str) -> int:
         return self.incrby(key, 1)

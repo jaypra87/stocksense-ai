@@ -23,19 +23,22 @@ from app.cache.redis_client import get_redis
 from app.core.config import get_settings
 from app.core.rate_limit import rate_limit
 from app.db.models.conversation import Conversation, ConversationMessage
+from app.db.models.digest import Digest
 from app.db.models.user import User
 from app.db.session import SessionLocal, get_db, set_rls_user
 from app.schemas.stockman import (
     ConversationCreate,
     ConversationOut,
     ConversationSummary,
+    DigestOut,
     MessageCreate,
     StatusOut,
 )
 from app.services.market_data.base import MarketDataProvider
 from app.services.market_data.registry import get_provider
-from app.services.stockman import agent, budget
+from app.services.stockman import agent, budget, digest
 from app.services.stockman.budget import BudgetExceeded
+from app.services.stockman.digest import DigestBusy
 from app.services.stockman.tools import ToolContext
 
 logger = logging.getLogger("stocksense.stockman")
@@ -70,6 +73,69 @@ def status(user: User = Depends(get_current_user), redis: Redis = Depends(get_re
         "budget": {"used": used, "limit": _settings.stockman_user_daily_tokens},
         "disclaimer": DISCLAIMER,
     }
+
+
+@router.get("/digest", response_model=DigestOut)
+def get_digest(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+    provider: MarketDataProvider = Depends(get_provider),
+    client: anthropic.Anthropic = Depends(get_anthropic_client),
+) -> dict:
+    """Today's digest, written on the first call of the day."""
+    return _digest(db, redis, provider, client, user.id, force=False)
+
+
+@router.post("/digest/refresh", response_model=DigestOut, dependencies=[Depends(_message_limiter)])
+def refresh_digest(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+    provider: MarketDataProvider = Depends(get_provider),
+    client: anthropic.Anthropic = Depends(get_anthropic_client),
+) -> dict:
+    return _digest(db, redis, provider, client, user.id, force=True)
+
+
+def _digest(
+    db: Session,
+    redis: Redis,
+    provider: MarketDataProvider,
+    client: anthropic.Anthropic,
+    user_id: uuid.UUID,
+    force: bool,
+) -> dict:
+    unavailable = {"available": False, "disclaimer": DISCLAIMER}
+    if not _settings.stockman_enabled:
+        return {**unavailable, "reason": OFFLINE}
+    if not force:
+        cached = digest.today(db, user_id)
+        if cached is not None:
+            return {**cached, "disclaimer": DISCLAIMER}
+    try:
+        budget.check(redis, user_id)
+        written = digest.generate(db, redis, provider, client, user_id, force=force)
+    except BudgetExceeded:
+        return {**unavailable, "reason": RESTING}
+    except DigestBusy:
+        raise HTTPException(status_code=409, detail="Today's digest is being written.") from None
+    except anthropic.APIError:
+        logger.exception("stockman: digest failed")
+        return {**unavailable, "reason": "Stock-man couldn't write the digest right now."}
+    budget.charge(redis, user_id, _digest_tokens(db, user_id))
+    return {**written, "disclaimer": DISCLAIMER}
+
+
+def _digest_tokens(db: Session, user_id: uuid.UUID) -> int:
+    row = (
+        db.execute(
+            select(Digest).where(Digest.user_id == user_id).order_by(Digest.created_at.desc())
+        )
+        .scalars()
+        .first()
+    )
+    return (row.input_tokens + row.output_tokens) if row is not None else 0
 
 
 @router.get("/conversations", response_model=list[ConversationSummary])

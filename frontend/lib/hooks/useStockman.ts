@@ -8,8 +8,10 @@ import {
   createConversation,
   deleteConversation,
   getConversation,
+  getDigest,
   getStockmanStatus,
   listConversations,
+  refreshDigest,
   streamMessage,
 } from "@/lib/api/stockman";
 import type { ChatTurn, StoredMessage, StreamEvent, ToolCall } from "@/types/stockman";
@@ -19,6 +21,31 @@ const LIST_KEY = ["stockman", "conversations"];
 
 export function useStockmanStatus() {
   return useQuery({ queryKey: STATUS_KEY, queryFn: getStockmanStatus, staleTime: 60 * 1000 });
+}
+
+const DIGEST_KEY = ["stockman", "digest"];
+
+// The first read of the day writes the digest, which takes a few seconds; a
+// 409 means another tab is already writing it, so wait and read again.
+export function useDigest() {
+  return useQuery({
+    queryKey: DIGEST_KEY,
+    queryFn: getDigest,
+    staleTime: 10 * 60 * 1000,
+    retry: (count, err) => err instanceof ApiError && err.status === 409 && count < 6,
+    retryDelay: 3000,
+  });
+}
+
+export function useRefreshDigest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: refreshDigest,
+    onSuccess: (data) => {
+      qc.setQueryData(DIGEST_KEY, data);
+      void qc.invalidateQueries({ queryKey: STATUS_KEY });
+    },
+  });
 }
 
 export function useConversations() {

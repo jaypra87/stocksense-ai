@@ -3,6 +3,7 @@ import { API_BASE } from "@/lib/env";
 import type {
   Conversation,
   ConversationSummary,
+  Digest,
   StockmanStatus,
   StreamEvent,
 } from "@/types/stockman";
@@ -89,4 +90,12 @@ function parseEvent(chunk: string): StreamEvent | null {
   } catch {
     return null;
   }
+}
+
+export function getDigest(): Promise<Digest> {
+  return apiFetch<Digest>("/stockman/digest");
+}
+
+export function refreshDigest(): Promise<Digest> {
+  return apiFetch<Digest>("/stockman/digest/refresh", { method: "POST" });
 }

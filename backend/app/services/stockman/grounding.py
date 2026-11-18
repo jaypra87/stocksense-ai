@@ -9,7 +9,8 @@ horizons, "52-week") and the user's own figures are not worth flagging.
 import re
 from collections.abc import Iterable
 
-_NUMBER = re.compile(r"(?<![\w.])[-+]?\$?\d[\d,]*(?:\.\d+)?%?(?![\w.])")
+# A trailing period is sentence punctuation, not part of the number.
+_NUMBER = re.compile(r"(?<![\w.])[-+]?\$?\d[\d,]*(?:\.\d+)?%?(?!\w|\.\d)")
 _IGNORE_BELOW = 101  # bare integers up to 100 read as counts or ordinals
 _YEARS = range(1990, 2101)
 # How far a quoted figure may sit from a fetched one; the model is told to
