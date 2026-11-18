@@ -18,6 +18,7 @@ from app.core.crypto import encrypt_email, hash_email, normalize_email
 from app.core.security import hash_password, session_expiry, verify_password
 from app.db.models.alert import Alert
 from app.db.models.backtest import Backtest
+from app.db.models.portfolio import Portfolio
 from app.db.models.session import UserSession
 from app.db.models.user import User
 from app.db.models.watchlist import WatchlistItem
@@ -120,6 +121,14 @@ def merge_guest_into(db: Session, guest: User, account: User) -> None:
         db.execute(
             update(Backtest).where(Backtest.user_id == guest.id).values(user_id=account.id)
         )
+        # An account keeps the portfolio it already has; a guest's paper
+        # trades only come along when there is nothing to overwrite.
+        if db.execute(
+            select(Portfolio.id).where(Portfolio.user_id == account.id)
+        ).scalar_one_or_none() is None:
+            db.execute(
+                update(Portfolio).where(Portfolio.user_id == guest.id).values(user_id=account.id)
+            )
         db.execute(delete(User).where(User.id == guest.id))
         db.commit()
 

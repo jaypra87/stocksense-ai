@@ -3,6 +3,7 @@
 from app.db.models.alert import Alert, AlertEvent
 from app.db.models.backtest import Backtest
 from app.db.models.model_artifact import ModelArtifact
+from app.db.models.portfolio import Portfolio, Position, Trade
 from app.db.models.prediction import Prediction
 from app.db.models.price_candle import PriceCandle
 from app.db.models.risk_snapshot import RiskSnapshot
@@ -18,12 +19,15 @@ __all__ = [
     "AlertEvent",
     "Backtest",
     "ModelArtifact",
+    "Portfolio",
+    "Position",
     "Prediction",
     "PriceCandle",
     "RiskSnapshot",
     "SentimentSnapshot",
     "Stock",
     "TechnicalIndicator",
+    "Trade",
     "User",
     "UserSession",
     "WatchlistItem",

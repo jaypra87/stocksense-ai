@@ -6,6 +6,7 @@ const LINKS = [
   { href: "/", label: "Home" },
   { href: "/transparency", label: "How the models work" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/portfolio", label: "Paper portfolio" },
   { href: "/compare", label: "Compare" },
 ];
 

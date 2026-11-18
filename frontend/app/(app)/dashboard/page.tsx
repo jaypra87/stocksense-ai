@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { MarketNews } from "@/components/dashboard/MarketNews";
+import { PortfolioPreview } from "@/components/portfolio/PortfolioPreview";
 import { PopularTickers } from "@/components/stock/PopularTickers";
 import { Reveal } from "@/components/shared/Reveal";
 import { WatchlistPreview } from "@/components/watchlist/WatchlistPreview";
@@ -17,6 +18,7 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      <PortfolioPreview />
       <WatchlistPreview />
       <PopularTickers />
       <Reveal>

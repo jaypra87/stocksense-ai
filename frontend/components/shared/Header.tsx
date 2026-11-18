@@ -2,6 +2,7 @@
 
 import {
   Bell,
+  Briefcase,
   GitCompare,
   LogOut,
   Menu,
@@ -21,6 +22,7 @@ import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 const NAV = [
+  { href: "/portfolio", label: "Portfolio", Icon: Briefcase },
   { href: "/watchlist", label: "Watchlist", Icon: Star },
   { href: "/compare", label: "Compare", Icon: GitCompare },
   { href: "/alerts", label: "Alerts", Icon: Bell },
@@ -53,10 +55,14 @@ export function Header() {
         </div>
 
         <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
-          {NAV.slice(0, 3).map(({ href, label, Icon }) => (
+          {/* Four labelled items only fit beside the search box from xl up; below that
+              the icons stand alone. */}
+          {NAV.slice(0, 4).map(({ href, label, Icon }) => (
             <Link
               key={href}
               href={href}
+              aria-label={label}
+              title={label}
               aria-current={pathname === href ? "page" : undefined}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition-colors",
@@ -65,7 +71,8 @@ export function Header() {
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
-              <Icon className="h-4 w-4" aria-hidden /> {label}
+              <Icon className="h-4 w-4" aria-hidden />
+              <span className="hidden xl:inline">{label}</span>
             </Link>
           ))}
         </nav>
@@ -107,7 +114,11 @@ export function Header() {
           aria-controls="mobile-nav"
           className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
         >
-          {menuOpen ? <X className="h-4 w-4" aria-hidden /> : <Menu className="h-4 w-4" aria-hidden />}
+          {menuOpen ? (
+            <X className="h-4 w-4" aria-hidden />
+          ) : (
+            <Menu className="h-4 w-4" aria-hidden />
+          )}
         </button>
       </div>
 

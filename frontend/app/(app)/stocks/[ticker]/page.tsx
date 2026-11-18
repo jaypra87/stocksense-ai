@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { BacktestPanel } from "@/components/backtest/BacktestPanel";
 import { IndicatorsPanel } from "@/components/indicators/IndicatorsPanel";
+import { PaperTradeButton } from "@/components/portfolio/PaperTradeButton";
 import { RSIChart } from "@/components/indicators/RSIChart";
 import { PredictionPanel } from "@/components/prediction/PredictionPanel";
 import { RiskPanel } from "@/components/risk/RiskPanel";
@@ -61,8 +62,8 @@ export default function StockPage() {
   return (
     <div className="space-y-6">
       <BackToDashboard />
-      {/* Header row: ticker + watchlist toggle */}
-      <div className="animate-fade-up flex items-center justify-between gap-3">
+      {/* Header row: ticker + watchlist toggle + paper trade */}
+      <div className="animate-fade-up flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <TickerLogo ticker={ticker} size="lg" />
           <div>
@@ -72,7 +73,10 @@ export default function StockPage() {
             )}
           </div>
         </div>
-        <WatchlistButton ticker={ticker} />
+        <div className="flex items-center gap-2">
+          <PaperTradeButton ticker={ticker} />
+          <WatchlistButton ticker={ticker} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
