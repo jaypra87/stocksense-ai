@@ -256,8 +256,8 @@ def send_message(
         except anthropic.RateLimitError:
             yield _sse("error", {"message": "The model is busy. Try again in a moment."})
         except anthropic.APIStatusError as exc:
-            logger.warning("stockman: API error %s", exc.status_code)
-            yield _sse("error", {"message": "The model returned an error. Try again."})
+            logger.warning("stockman: API error %s: %s", exc.status_code, exc.message)
+            yield _sse("error", {"message": _api_error_message(exc)})
         except anthropic.APIConnectionError:
             yield _sse("error", {"message": "Couldn't reach the model. Try again."})
         except Exception:
@@ -276,6 +276,16 @@ def send_message(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+def _api_error_message(exc: anthropic.APIStatusError) -> str:
+    # A billing problem is the operator's to fix, and "try again" would only
+    # send the visitor in circles.
+    if "credit balance" in exc.message.lower() or exc.status_code == 402:
+        return "Stock-man's model account is out of credits. The site owner needs to top it up."
+    if exc.status_code == 401:
+        return "Stock-man's model API key was rejected. The site owner needs to check it."
+    return "The model returned an error. Try again."
 
 
 def _persist(session: Session, conversation_id: uuid.UUID, done: dict) -> None:

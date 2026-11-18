@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { ConnectAssistant } from "@/components/settings/ConnectAssistant";
 import { BackToDashboard } from "@/components/shared/BackToDashboard";
 import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
@@ -104,6 +105,8 @@ export default function SettingsPage() {
           label="Default chart range"
         />
       </Card>
+
+      <ConnectAssistant />
 
       <Card className="space-y-2">
         <CardTitle>Alert delivery</CardTitle>

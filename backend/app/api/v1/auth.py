@@ -21,7 +21,14 @@ from app.core.turnstile import verify_turnstile
 from app.db.models.session import UserSession
 from app.db.models.user import User
 from app.db.session import get_db, set_rls_user
-from app.schemas.auth import GuestRequest, LoginRequest, SessionOut, UserCreate, UserOut
+from app.schemas.auth import (
+    GuestRequest,
+    LoginRequest,
+    McpTokenOut,
+    SessionOut,
+    UserCreate,
+    UserOut,
+)
 from app.services import auth_service
 from app.services.auth_service import (
     AlreadyRegisteredError,
@@ -203,6 +210,22 @@ def logout_all(
     """Revoke every session for this account, this browser's included."""
     auth_service.revoke_all_sessions(db, user)
     clear_session_cookie(response)
+
+
+@router.post("/mcp-token", response_model=McpTokenOut)
+def mcp_token(
+    request: Request, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> dict:
+    """A bearer token for an MCP client such as Claude Desktop or Claude Code.
+
+    It is a separate session row rather than the browser's, so the connector
+    shows up in the session list on its own and can be revoked without
+    signing the browser out."""
+    session = auth_service.create_session(db, user, "MCP connector")
+    return {
+        "token": create_session_token(user.id, session.id, session.expires_at),
+        "expires_at": session.expires_at.isoformat(),
+    }
 
 
 @router.get("/me", response_model=UserOut)

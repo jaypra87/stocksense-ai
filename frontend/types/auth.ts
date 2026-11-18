@@ -21,3 +21,9 @@ export interface SessionInfo {
   last_seen_at: string | null;
   user_agent: string | null;
 }
+
+export interface McpToken {
+  token: string;
+  expires_at: string;
+  url_path: string;
+}

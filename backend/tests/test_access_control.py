@@ -56,6 +56,7 @@ PROTECTED: list[tuple[str, str]] = [
     ("GET", "/api/v1/stockman/conversations"),
     ("POST", "/api/v1/stockman/conversations"),
     ("GET", "/api/v1/auth/me"),
+    ("POST", "/api/v1/auth/mcp-token"),
     ("GET", "/api/v1/auth/sessions"),
     ("POST", "/api/v1/auth/logout"),
     ("POST", "/api/v1/auth/logout-all"),

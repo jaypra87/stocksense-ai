@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from app.api.v1 import api_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.mcp import server as mcp
 
 logger = logging.getLogger("stocksense.request")
 
@@ -18,7 +19,8 @@ _UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     configure_logging()
-    yield
+    async with mcp.lifespan():
+        yield
 
 
 async def log_requests(request: Request, call_next):
@@ -108,6 +110,7 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
     app.include_router(api_router)
+    app.add_route("/mcp", mcp.McpEndpoint(), methods=["GET", "POST", "DELETE"])
     return app
 
 

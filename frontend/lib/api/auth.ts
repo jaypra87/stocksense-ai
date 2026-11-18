@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
-import type { SessionInfo, SessionResponse, User } from "@/types/auth";
+import type { McpToken, SessionInfo, SessionResponse, User } from "@/types/auth";
 
 /** Start (or resume) a guest session. Idempotent for a caller that has one. */
 export function guestApi(turnstileToken?: string | null): Promise<SessionResponse> {
@@ -46,4 +46,9 @@ export function meApi(): Promise<User> {
 
 export function sessionsApi(): Promise<SessionInfo[]> {
   return apiFetch<SessionInfo[]>("/auth/sessions");
+}
+
+/** A bearer token for an MCP client (Claude Desktop, Claude Code). Shown once. */
+export function mcpTokenApi(): Promise<McpToken> {
+  return apiFetch<McpToken>("/auth/mcp-token", { method: "POST" });
 }

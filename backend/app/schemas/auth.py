@@ -50,3 +50,12 @@ class SessionOut(BaseModel):
 
 # Old name, kept so nothing importing it breaks.
 Token = SessionOut
+
+
+class McpTokenOut(BaseModel):
+    """Shown once. The token is a session of its own, so it appears in the
+    session list and "sign out everywhere" revokes it."""
+
+    token: str
+    expires_at: str
+    url_path: str = "/mcp"
