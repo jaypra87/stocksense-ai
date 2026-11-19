@@ -70,16 +70,17 @@ def summary(db: Session, redis: Redis, provider: MarketDataProvider, user_id: uu
         .order_by(Position.opened_at)
     ).all()
 
+    today = _todays_activity(db, portfolio.id)
     positions: list[dict] = []
     market_value = Decimal(0)
     cost_basis = Decimal(0)
-    day_change = Decimal(0)
+    day_change = sum((t["realized"] for t in today.values()), Decimal(0))
     for position, company_name, currency in rows:
         price, change, stale = _mark(redis, provider, position)
         value = (position.quantity * price).quantize(_CENTS)
         basis = (position.quantity * position.avg_cost).quantize(_CENTS)
         pnl = value - basis
-        pos_day = (position.quantity * change).quantize(_CENTS) if change is not None else None
+        pos_day = _day_change(position, price, change, today.get(position.ticker))
         market_value += value
         cost_basis += basis
         if pos_day is not None:
@@ -255,6 +256,46 @@ def reset(db: Session, user_id: uuid.UUID) -> None:
     portfolio.cash = portfolio.starting_cash
     portfolio.reset_at = datetime.now(UTC)
     db.commit()
+
+
+def _day_change(
+    position: Position, price: Decimal, change: Decimal | None, today: dict | None
+) -> Decimal | None:
+    """What this position made today, the way a brokerage counts it: shares
+    held overnight move from yesterday's close, shares bought today move from
+    their fill. Measuring a fresh position from the previous close would
+    credit it with moves that happened before it existed."""
+    bought = today["bought"] if today else Decimal(0)
+    fresh = min(position.quantity, bought)
+    overnight = position.quantity - fresh
+    if overnight and change is None:
+        return None
+    result = overnight * (change or Decimal(0))
+    if fresh and today:
+        result += fresh * (price - today["vwap"])
+    return result.quantize(_CENTS)
+
+
+def _todays_activity(db: Session, portfolio_id: uuid.UUID) -> dict[str, dict]:
+    """Per ticker: shares bought since midnight UTC with their volume-weighted
+    fill price, and the gain realized on sales. UTC day, like the digest."""
+    start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    rows = db.execute(
+        select(Trade).where(Trade.portfolio_id == portfolio_id, Trade.executed_at >= start)
+    ).scalars()
+    out: dict[str, dict] = {}
+    for t in rows:
+        entry = out.setdefault(
+            t.ticker, {"bought": Decimal(0), "spent": Decimal(0), "realized": Decimal(0)}
+        )
+        if t.side == "buy":
+            entry["bought"] += t.quantity
+            entry["spent"] += t.quantity * t.price
+        elif t.realized_pnl is not None:
+            entry["realized"] += t.realized_pnl
+    for entry in out.values():
+        entry["vwap"] = entry["spent"] / entry["bought"] if entry["bought"] else Decimal(0)
+    return out
 
 
 def _mark(

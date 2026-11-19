@@ -80,7 +80,7 @@ export default function PortfolioPage() {
               <StatTile
                 label="Today"
                 value={fmtSignedCurrency(data.day_change)}
-                sub={fmtPercent(data.day_change_pct)}
+                sub={`${fmtPercent(data.day_change_pct)} · from your fill for shares bought today`}
                 valueClassName={cn("text-2xl", pnlColor(data.day_change))}
               />
             </Reveal>

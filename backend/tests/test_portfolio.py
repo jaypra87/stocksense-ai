@@ -184,6 +184,40 @@ def test_reset_restores_the_starting_balance_and_clears_the_ledger(db, redis, us
     assert portfolio_service.list_trades(db, user_id) == []
 
 
+def test_shares_bought_today_count_todays_gain_from_their_fill(db, redis, user_id) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from app.db.models.portfolio import Trade
+
+    buy(db, redis, user_id, "NVDA", quantity=Decimal("10"))
+    # A fill at the live quote has made nothing yet, whatever the stock did today.
+    assert portfolio_service.summary(db, redis, PROVIDER, user_id)["day_change"] == 0
+
+    # Bought $2 below the current price: $20 today, from the fill, not the close.
+    fill = db.execute(select(Trade)).scalar_one()
+    fill.price = fill.price - Decimal("2")
+    db.commit()
+    assert portfolio_service.summary(db, redis, PROVIDER, user_id)["day_change"] == 20
+
+    # Held overnight: today's gain is the stock's own daily move.
+    fill.executed_at = datetime.now(UTC) - timedelta(days=1)
+    db.commit()
+    change = Decimal(str(stock_service.get_quote(redis, PROVIDER, "NVDA")["change"]))
+    summary = portfolio_service.summary(db, redis, PROVIDER, user_id)
+    assert Decimal(str(summary["day_change"])) == (change * 10).quantize(Decimal("0.0001"))
+
+
+def test_a_sale_today_adds_its_realized_gain_to_todays_return(db, redis, user_id) -> None:
+    buy(db, redis, user_id, "NVDA", quantity=Decimal("10"))
+    position = db.execute(select(Position)).scalar_one()
+    position.avg_cost = Decimal("100")
+    db.commit()
+    fill = sell(db, redis, user_id, "NVDA", quantity=Decimal("4"))
+    summary = portfolio_service.summary(db, redis, PROVIDER, user_id)
+    # 6 shares bought today at the quote made nothing; the sale's gain is today's.
+    assert summary["day_change"] == pytest.approx(fill["realized_pnl"], abs=0.01)
+
+
 def test_weights_add_up_across_positions(db, redis, user_id) -> None:
     buy(db, redis, user_id, "AAPL", amount=Decimal("25000"))
     buy(db, redis, user_id, "NVDA", amount=Decimal("25000"))
